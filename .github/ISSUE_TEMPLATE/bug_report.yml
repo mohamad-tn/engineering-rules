@@ -1,0 +1,28 @@
+name: Bug report
+description: A gate, script or template does not behave as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you run, what did you expect, what did you get?
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest repository or command sequence that shows it.
+      render: shell
+    validations: { required: true }
+  - type: input
+    id: stack
+    attributes:
+      label: Stack and tool versions
+      placeholder: "node 22, npm 10, ubuntu 24.04 ..."
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: Paste the relevant lines (remove secrets).
+      render: text

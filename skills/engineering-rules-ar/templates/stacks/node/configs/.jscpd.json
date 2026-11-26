@@ -1,0 +1,10 @@
+{
+  "threshold": 3,
+  "minTokens": 50,
+  "path": ["src", "app", "lib", "packages", "scripts"],
+  "format": ["typescript", "tsx", "javascript", "jsx"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.*"],
+  "reporters": ["console"],
+  "exitCode": 1,
+  "gitignore": true
+}

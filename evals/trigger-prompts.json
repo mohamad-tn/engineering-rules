@@ -1,0 +1,26 @@
+{
+  "$comment": "Prompts an agent should (or should not) answer with the engineering-rules skill. Run them by hand against any agent that supports skills: see evals/README.md. These are test data, not an automated test.",
+  "should_trigger": [
+    "Set up engineering rules and pull request checks in this repository.",
+    "My AI assistant keeps opening huge pull requests. How do I limit that?",
+    "Add secret scanning and a PR size limit to this repo.",
+    "Create an AGENTS.md for this project with rules my coding agent must follow.",
+    "We have no paid CI. How can I prove tests and linting passed in the pull request?",
+    "Run the build, tests and audit for this Laravel and Next.js monorepo.",
+    "Our .env got committed. What do we do and how do we stop it happening again?",
+    "Review this pull request against our definition of done.",
+    "Which checks should every Flutter, Go or Rust project run before merge?",
+    "Update the engineering rules we installed last year without losing our edits.",
+    "اجعل هذا المستودع يفحص الأسرار وحجم طلب الدمج قبل الدمج.",
+    "جهّز قواعد الهندسة وبوابات طلبات الدمج لمشروع Laravel."
+  ],
+  "should_not_trigger": [
+    "Write a Python function that parses ISO dates.",
+    "Explain how a B-tree works.",
+    "Fix this TypeError in my React component.",
+    "Design a database schema for a library app.",
+    "Translate this paragraph to French.",
+    "Write a marketing email for our launch.",
+    "What is the difference between TCP and UDP?"
+  ]
+}

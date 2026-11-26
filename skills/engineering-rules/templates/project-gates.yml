@@ -1,0 +1,73 @@
+# Project gates: secret scan, docs-check, dependency-bot config, policy gates,
+# PR size. One job, so one runner start and one required check
+# ("project-gates / gates").
+#
+# Copy to .github/workflows/project-gates.yml together with the scripts it
+# calls (see README "Adopt in a single repository"). Every step is a plain
+# script, so the same gates run on your machine: scripts/local-proof.sh.
+#
+# Pins: actions are pinned to commit SHAs (tag in the comment). The dependency
+# bot keeps them current. Tool versions live in .github/tool-pins.env.
+# Runner: vars.CI_RUNNER switches between hosted and self-hosted runners with
+# no code change (references/continuity.md). Unset = GitHub-hosted.
+name: project-gates
+
+on:
+  pull_request:
+    # edited / labeled / unlabeled: the PR title and labels are inputs of the
+    # docs-check and PR-size gates, so a change to them must re-run the job.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One run per commit: a new push cancels the older pull-request run. Runs on
+# main are never cancelled.
+concurrency:
+  group: project-gates-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (full history for the secret scan)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+
+      - name: Secret scan (full history)
+        run: bash .github/scripts/gitleaks-scan.sh .gitleaks.toml
+
+      - name: docs-check
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: bash .github/scripts/docs-check.sh .
+
+      - name: Dependency-bot config
+        run: bash .github/scripts/renovate-config-check.sh .
+
+      - name: Policy gates
+        run: |
+          node .github/scripts/policy-gates.mjs .
+          node .github/scripts/feature-flag-expiry.mjs .
+
+      - name: PR size
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: bash .github/scripts/pr-size-check.sh

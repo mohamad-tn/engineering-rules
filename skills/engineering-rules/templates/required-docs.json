@@ -1,0 +1,10 @@
+{
+  "$comment": "Files every repository must have. Key \"*\" applies to all repositories; add a key per repository name (backend, web, mobile, infra) for extras. Paths are relative to the repository root.",
+  "*": ["README.md", "CHANGELOG.md", "AGENTS.md", "docs/README.md", "docs/onboarding.md", "docs/docs-map.yml"],
+  "infra": [
+    "docs/rules-compliance.md",
+    "docs/adr/README.md",
+    "docs/runbooks/README.md",
+    "docs/runbooks/secret-rotation.md"
+  ]
+}

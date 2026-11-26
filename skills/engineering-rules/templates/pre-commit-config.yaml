@@ -1,0 +1,15 @@
+# Local hooks. Install once per clone:
+#   pipx install pre-commit   # or: pip install pre-commit
+#   pre-commit install
+# The gitleaks hook reads .gitleaks.toml from the repository root and scans
+# staged changes before they are committed.
+#
+# rev is the COMMIT SHA of the gitleaks release tag (verified against the
+# upstream tag when this package was built), with the tag in a comment. Keep
+# this pin, the CI pin (.github/tool-pins.env) and your versions record in
+# step: change all of them in one pull request.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # frozen: v8.30.1
+    hooks:
+      - id: gitleaks

@@ -1,0 +1,32 @@
+# engineering-rules
+
+> Guardrails for fast and AI-written code. One command adds a short rules file (AGENTS.md) and real gates to any repository: secret scan over full history, docs-check, policy gates, feature-flag expiry, PR size, and per-stack install, format, lint, types, test, build and audit for Node, Next.js, React, React Native, Vue, Angular, .NET, Laravel, Flutter, Python, Java, Go, Rust, Ruby, Swift, C/C++, Terraform and Docker. Plain bash and Node, runs locally, no paid CI needed. A gate that did not run is never a pass. Works with Claude Code, Cursor, Codex, Copilot, Gemini and human teams. English and Arabic editions.
+
+## Start here
+
+- [README](README.md): the problem, a real before/after demo, quick start
+- [Skill entry point](skills/engineering-rules/SKILL.md): what an agent does and the hard rules
+- [The binding rules](skills/engineering-rules/templates/AGENTS.md): the short rules file installed in a repository
+- [Everything in one file](llms-full.txt): skill, rules, rule index, stack list and fix recipes
+
+## Reference
+
+- [Rule index](skills/engineering-rules/references/rules-index.md): every rule, its scope, check and honest status
+- [Stack gates](skills/engineering-rules/references/stacks/README.md): supported stacks and how each is tested
+- [Fixing failures](skills/engineering-rules/references/fixing-failures.md): what to do when a gate fails
+- [Local proof](skills/engineering-rules/references/local-proof.md): run the gates without paid CI
+
+## Guides
+
+- [How it works](docs/how-it-works.md)
+- [Adoption guide](docs/adoption-guide.md): new repositories, legacy repositories, monorepos, several repositories
+- [Any kind of project](docs/project-types.md)
+- [CI providers](docs/ci-providers.md): GitHub Actions, GitLab, Bitbucket, Jenkins, or none
+- [Testing](docs/testing.md): which toolchains are exercised for real
+- [FAQ](docs/faq.md)
+
+## Optional
+
+- [Arabic edition](README.ar.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)

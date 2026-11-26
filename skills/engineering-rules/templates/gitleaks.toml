@@ -1,0 +1,36 @@
+# Project gitleaks rules. Keep this file byte-identical in every repository of
+# the project (the pre-commit hook reads it from the repository root).
+# Never add an allowlist entry for a real secret: rotate it instead.
+title = "Project gitleaks config"
+
+[extend]
+# Every upstream gitleaks rule stays on.
+useDefault = true
+
+[[rules]]
+id = "project-signing-key-file"
+description = "Signing keystore, certificate bundle or Apple key tracked in git"
+path = '''(?i)\.(?:jks|keystore|p12|pfx|p8|mobileprovision)$'''
+
+[[rules]]
+id = "project-signing-password"
+description = "Literal Android or Gradle signing password (storePassword, keyPassword)"
+regex = '''(?i)\b(?:store|key)[_-]?password["']?(?:\s*[:=]\s*|\s+)["']([^"'\s$]{4,})["']'''
+secretGroup = 1
+keywords = ["storepassword", "keypassword", "store_password", "key_password", "store-password", "key-password"]
+
+[[rules]]
+id = "project-dotenv-file"
+description = "Environment file tracked in git; only .env.example templates belong in the repository"
+path = '''(?:^|/)\.env(?:\.[^/]+)?$'''
+
+# Template files carry variable names, never values. The default rules still
+# scan their contents; only this path rule skips them.
+[[rules.allowlists]]
+paths = ['''(?:^|/)\.env\.example$''']
+
+# Optional, for projects that use Expo/EAS (remove if you do not):
+# [[rules]]
+# id = "project-eas-credentials-file"
+# description = "EAS local credentials file (keystore passwords) tracked in git"
+# path = '''(?:^|/)credentials\.json$'''

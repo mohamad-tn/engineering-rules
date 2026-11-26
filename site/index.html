@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>engineering-rules: guardrails and real gates for fast and AI-written code</title>
+<meta name="description" content="One command adds small engineering rules and real gates (secret scan, docs, PR size, tests, build, audit) to any repo. Node, Next.js, Laravel, Flutter, .NET, Python, Go, Rust and more. No paid CI needed.">
+<link rel="canonical" href="https://mohamad-tn.github.io/engineering-rules/">
+<link rel="alternate" hreflang="en" href="https://mohamad-tn.github.io/engineering-rules/">
+<link rel="alternate" hreflang="ar" href="https://mohamad-tn.github.io/engineering-rules/ar/">
+<link rel="alternate" hreflang="x-default" href="https://mohamad-tn.github.io/engineering-rules/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="engineering-rules: guardrails and real gates for fast and AI-written code">
+<meta property="og:description" content="One command adds small engineering rules and real gates (secret scan, docs, PR size, tests, build, audit) to any repo. Node, Next.js, Laravel, Flutter, .NET, Python, Go, Rust and more. No paid CI needed.">
+<meta property="og:url" content="https://mohamad-tn.github.io/engineering-rules/">
+<meta property="og:image" content="https://mohamad-tn.github.io/engineering-rules/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://mohamad-tn.github.io/engineering-rules/assets/social-preview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "SoftwareSourceCode", "name": "engineering-rules", "description": "One command adds small engineering rules and real gates (secret scan, docs, PR size, tests, build, audit) to any repo. Node, Next.js, Laravel, Flutter, .NET, Python, Go, Rust and more. No paid CI needed.", "codeRepository": "https://github.com/mohamad-tn/engineering-rules", "license": "https://opensource.org/licenses/MIT", "programmingLanguage": ["Shell", "JavaScript"], "url": "https://mohamad-tn.github.io/engineering-rules/", "inLanguage": "en"}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is engineering-rules?", "acceptedAnswer": {"@type": "Answer", "text": "A short rules file and a set of real, automated pull-request gates, packaged as an Agent Skill and a one-command installer. It works for any repository and stack."}}, {"@type": "Question", "name": "Do I need paid CI?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every gate is a plain bash or Node script. Run local-proof.sh and paste its output into the pull request, or call the same scripts from GitHub Actions, GitLab, Bitbucket or Jenkins."}}, {"@type": "Question", "name": "Does it work with AI coding assistants?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Claude Code, Cursor, Codex, Copilot, Gemini and Windsurf read AGENTS.md or its bridge files. An agent can adopt it with one command and read machine-readable results with --json."}}, {"@type": "Question", "name": "Which languages and frameworks are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Node.js, Next.js, React, React Native and Expo, Vue, Angular, Svelte, NestJS, .NET, Laravel and PHP, Flutter, Python and Django, Java and Spring, Go, Rust, Ruby and Rails, Swift, C and C++ with CMake, Terraform and OpenTofu, and Docker."}}, {"@type": "Question", "name": "Can I adopt it in an existing, messy repository?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Start with the lite profile: old markdown is not linted, old history can be scanned from the adoption commit, and a gate you switch off on purpose leaves the required list."}}, {"@type": "Question", "name": "Is there an Arabic edition?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. A full Arabic edition of the skill, the README and the guides ships in the same repository."}}]}]}</script>
+<style>
+:root{--bg:#ffffff;--fg:#1f2328;--muted:#59636e;--card:#f6f8fa;--line:#d1d9e0;--accent:#1a7f37;--accent2:#0969da}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--card:#161b22;--line:#30363d;--accent:#3fb950;--accent2:#79c0ff}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,Segoe UI,Helvetica,Arial,"Noto Naskh Arabic","Noto Sans Arabic",sans-serif}
+a{color:var(--accent2)}main,header,footer{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 0;font-weight:600}
+h1{font-size:clamp(28px,5vw,48px);line-height:1.15;margin:32px 0 12px}
+h2{font-size:28px;margin:56px 0 12px}
+.lead{font-size:20px;color:var(--muted);max-width:760px}
+.btn{display:inline-block;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none;margin:8px 8px 8px 0;border:1px solid var(--line)}
+[dir=rtl] .btn{margin:8px 0 8px 8px}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;overflow:auto;direction:ltr;text-align:left}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h3{margin:0 0 6px;font-size:17px}.n{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;margin-inline-end:8px}
+.card pre{margin:10px 0 0;font-size:12px}.card p{margin:0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none}
+.chips li{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:14px}
+img{max-width:100%;height:auto;border-radius:10px;display:block;margin:12px 0}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:600}footer{padding:40px 20px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><nav><span>engineering-rules</span><span><a href="ar/">العربية</a> · <a href="https://github.com/mohamad-tn/engineering-rules">GitHub</a></span></nav></header>
+<main>
+<h1>Guardrails for fast code, and for code written by AI.</h1>
+<p class="lead">One command adds a short rules file and real, automated gates to any repository. Every pull request carries proof that the checks passed, on GitHub Actions or on your laptop.</p>
+<p><a class="btn primary" href="https://github.com/mohamad-tn/engineering-rules">View on GitHub</a><a class="btn" href="https://github.com/mohamad-tn/engineering-rules/blob/main/README.md">Read the guide</a></p>
+<h2>Install in 60 seconds</h2>
+<pre><code>git clone https://github.com/mohamad-tn/engineering-rules.git
+bash skills/engineering-rules/scripts/install.sh --target ./my-project
+bash .github/scripts/doctor.sh
+bash .github/scripts/local-proof.sh</code></pre>
+<h2>The problem</h2><p>Writing code has never been faster. Reviewing it has not. These failures slip through:</p><div class="grid"><div class="card"><h3>Committed secrets</h3><p>A .env file or key in git history turns rotation into an incident.</p></div><div class="card"><h3>Configuration in code</h3><p>Currency, time zones and hosts typed into code need a release for every new market.</p></div><div class="card"><h3>Giant pull requests</h3><p>1,300 changed lines are not reviewed; bugs ride along.</p></div><div class="card"><h3>Docs that lie</h3><p>Code changes, documentation and changelog do not.</p></div><div class="card"><h3>Unreproducible builds</h3><p>No lockfile, beta dependencies, builds that differ between machines.</p></div><div class="card"><h3>Green that means nothing</h3><p>Skipped tests and gates that quietly did not run.</p></div></div>
+<h2>How it works</h2><div class="grid"><div class="card"><h3><span class="n">1</span>Install</h3><p>Detects your stack and never overwrites a file.</p><pre><code>bash skills/engineering-rules/scripts/install.sh --target ./my-project</code></pre></div><div class="card"><h3><span class="n">2</span>Work in small tasks</h3><p>About one pull request per task, around 400 changed lines.</p></div><div class="card"><h3><span class="n">3</span>Prove it</h3><p>Runs every gate and prints a block you paste into the pull request.</p><pre><code>bash .github/scripts/local-proof.sh</code></pre></div><div class="card"><h3><span class="n">4</span>A human merges</h3><p>Assistants never merge. A gate that did not run is never a pass.</p></div></div>
+<h2>See it work</h2><p>The same feature, first as a fast pull request, then done to the rules. This is the real output of the included demo.</p>
+<img src="assets/demo-before.svg" alt="Five gates fail on the first version" width="1000" height="360" loading="lazy">
+<img src="assets/demo-after.svg" alt="All gates pass after the rewrite" width="1000" height="330" loading="lazy">
+<h2>Every stack, auto-detected</h2><p>Install, format, lint, types, tests, build and audit for each stack, monorepos included.</p><ul class="chips"><li>Node.js</li><li>Next.js</li><li>React</li><li>React Native</li><li>Vue</li><li>Angular</li><li>Svelte</li><li>NestJS</li><li>.NET</li><li>Laravel</li><li>Symfony</li><li>Flutter</li><li>Python</li><li>Django</li><li>FastAPI</li><li>Java</li><li>Spring Boot</li><li>Go</li><li>Rust</li><li>Ruby</li><li>Rails</li><li>Swift</li><li>C / C++</li><li>Terraform</li><li>Docker</li></ul>
+<h2>Works with any AI agent</h2><p>Claude Code, Cursor, Codex, GitHub Copilot, Gemini, Windsurf, or a human reviewer. The rules live in AGENTS.md; the installer adds small bridge files for each tool.</p>
+<h2>Questions</h2><details><summary>What is engineering-rules?</summary><p>A short rules file and a set of real, automated pull-request gates, packaged as an Agent Skill and a one-command installer. It works for any repository and stack.</p></details><details><summary>Do I need paid CI?</summary><p>No. Every gate is a plain bash or Node script. Run local-proof.sh and paste its output into the pull request, or call the same scripts from GitHub Actions, GitLab, Bitbucket or Jenkins.</p></details><details><summary>Does it work with AI coding assistants?</summary><p>Yes. Claude Code, Cursor, Codex, Copilot, Gemini and Windsurf read AGENTS.md or its bridge files. An agent can adopt it with one command and read machine-readable results with --json.</p></details><details><summary>Which languages and frameworks are supported?</summary><p>Node.js, Next.js, React, React Native and Expo, Vue, Angular, Svelte, NestJS, .NET, Laravel and PHP, Flutter, Python and Django, Java and Spring, Go, Rust, Ruby and Rails, Swift, C and C++ with CMake, Terraform and OpenTofu, and Docker.</p></details><details><summary>Can I adopt it in an existing, messy repository?</summary><p>Yes. Start with the lite profile: old markdown is not linted, old history can be scanned from the adoption commit, and a gate you switch off on purpose leaves the required list.</p></details><details><summary>Is there an Arabic edition?</summary><p>Yes. A full Arabic edition of the skill, the README and the guides ships in the same repository.</p></details>
+</main>
+<footer>MIT licensed. Plain bash and Node, no service, no tracking.</footer>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "example/demo",
+  "description": "demo",
+  "license": "MIT",
+  "require": { "php": ">=8.1" }
+}

@@ -1,0 +1,54 @@
+# Stack gates for Python (Django, FastAPI, Flask, libraries).
+# Copy to .github/workflows/stack-python.yml (the installer does this for you).
+# Runs scripts/stack-gates.sh: deps, format, lint, types, test, build, audit.
+# Which gates must pass is set in .github/engineering-rules.env (profile).
+# The same command runs on your machine:  bash .github/scripts/stack-gates.sh
+name: stack-python
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stack-python-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A docs-only pull request skips the heavy steps but the check still reports,
+      # so the required check never hangs. The default branch always runs everything.
+      - id: scope
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          predicate-quantifier: some-with-excludes
+          filters: |
+            code:
+              - "**"
+              - "!docs/**"
+              - "!**/*.md"
+      - id: gate
+        env:
+          RUN: ${{ github.event_name != 'pull_request' || steps.scope.outputs.code == 'true' }}
+        run: echo "run=${RUN}" >> "$GITHUB_OUTPUT"
+      - name: Setup Python
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"   # or: python-version-file: .python-version
+      # Optional audit tool. Pin a version you verified, then remove the comment:
+      # - run: python -m pip install pip-audit==<version>
+      - name: Stack gates
+        if: steps.gate.outputs.run == 'true'
+        run: bash .github/scripts/stack-gates.sh --root . --engine python

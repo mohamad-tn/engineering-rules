@@ -1,0 +1,19 @@
+name: Feature request
+description: A new rule, gate or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What goes wrong today, in which kind of project?
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: Which tier is it (universal, stack, domain) and how would it be checked?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

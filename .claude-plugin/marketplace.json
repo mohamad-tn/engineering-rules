@@ -1,0 +1,17 @@
+{
+  "name": "engineering-rules",
+  "owner": { "name": "Mohamad Tonbary" },
+  "metadata": {
+    "description": "Engineering rules and real pull-request gates for any stack."
+  },
+  "plugins": [
+    {
+      "name": "engineering-rules",
+      "source": "./",
+      "description": "Skills that adopt small engineering rules and real gates (secrets, docs, PR size, stack tests, build, audit) in any repository.",
+      "version": "1.1.0",
+      "category": "development",
+      "tags": ["code-quality", "ci", "pull-request", "agents-md"]
+    }
+  ]
+}

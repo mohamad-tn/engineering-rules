@@ -1,0 +1,22 @@
+== BEFORE: the pull request as first written
+| Gate | Command | Result |
+|---|---|---|
+| Secret scan | `gitleaks-scan.sh` | **FAIL** (exit 1) |
+| docs-check | `docs-check.sh` | **FAIL** (exit 1) |
+| Policy gates | `policy-gates.mjs` | **FAIL** (exit 1) |
+| Flag expiry | `feature-flag-expiry.mjs` | PASS |
+| PR size | `pr-size-check.sh` | **FAIL** (exit 1) |
+| Stack gates | `stack-gates.sh` | **FAIL** (exit 1) |
+| Renovate config | `renovate-config-check.sh` | PASS |
+
+Why it failed (from the proof):
+RuleID:      project-dotenv-file
+File:        .env
+docs-check: code changed under "src/**" (src/catalog-data.js, src/checkout.js) without a change in: docs/features/**, CHANGELOG.md
+docs-check: CHANGELOG.md has no entry and the pull-request title type "feat" is not one of chore/ci/test
+src/checkout.js,line=4::[country-literals] currency code literal "USD" (configuration is data, not code)
+src/checkout.js,line=5::[country-literals] time-zone id literal "Europe/Berlin" (configuration is data, not code)
+This pull request changes 1331 lines, above 800. Split it, or add the label pr-size-reason with a written reason.
+  test             FAIL    (exit 1, 1s)
+      | # fail 1
+| node | `.` | test | FAIL | exit 1, 1s |

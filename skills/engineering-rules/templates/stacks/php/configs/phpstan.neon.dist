@@ -1,0 +1,13 @@
+# Static analysis. Laravel: composer require --dev larastan/larastan, then keep the include.
+# Other PHP projects: delete the includes block.
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+        - src
+    excludePaths:
+        - vendor
+        - storage

@@ -1,0 +1,56 @@
+# Stack gates for Next.js (Node engine plus the client-bundle scan).
+# Copy to .github/workflows/stack-nextjs.yml (the installer does this for you).
+# Runs scripts/stack-gates.sh: deps, format, lint, types, test, build, audit.
+# Which gates must pass is set in .github/engineering-rules.env (profile).
+# The same command runs on your machine:  bash .github/scripts/stack-gates.sh
+name: stack-nextjs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stack-nextjs-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A docs-only pull request skips the heavy steps but the check still reports,
+      # so the required check never hangs. The default branch always runs everything.
+      - id: scope
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          predicate-quantifier: some-with-excludes
+          filters: |
+            code:
+              - "**"
+              - "!docs/**"
+              - "!**/*.md"
+      - id: gate
+        env:
+          RUN: ${{ github.event_name != 'pull_request' || steps.scope.outputs.code == 'true' }}
+        run: echo "run=${RUN}" >> "$GITHUB_OUTPUT"
+      - name: Setup Node
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*   # or: node-version-file: .nvmrc
+          # pnpm / yarn: add a `corepack enable` step before the gates
+      - name: Stack gates
+        if: steps.gate.outputs.run == 'true'
+        env:
+          # The client bundle must not contain the private backend host.
+          API_BASE_URL: http://api.example.com
+        run: bash .github/scripts/stack-gates.sh --root . --engine node

@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "engineering-rules: guardrails and real gates for fast and AI-written code"
+type: software
+authors:
+  - name: "Mohamad Tonbary"
+repository-code: "https://github.com/mohamad-tn/engineering-rules"
+license: MIT
+version: 1.1.0
+keywords:
+  - pull request
+  - engineering rules
+  - agent skills
+  - AGENTS.md
+  - code quality

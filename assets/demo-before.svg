@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="356" viewBox="0 0 1000 356" role="img" aria-label="BEFORE: a typical fast pull request">
+<rect width="1000" height="356" rx="12" fill="#0d1117" stroke="#30363d"/>
+<circle cx="24" cy="24" r="6" fill="#ff5f56"/><circle cx="44" cy="24" r="6" fill="#ffbd2e"/><circle cx="64" cy="24" r="6" fill="#27c93f"/>
+<text x="500.0" y="29" fill="#8b949e" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" text-anchor="middle">BEFORE: a typical fast pull request</text>
+<text y="64" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#3fb950">$ </tspan>
+<tspan x="40.9" fill="#e6edf3">bash .github/scripts/local-proof.sh --title "feat: checkout"</tspan>
+</text>
+<text y="88" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3"></tspan>
+</text>
+<text y="112" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">Secret scan      </tspan>
+<tspan x="167.64999999999998" fill="#ff7b72">FAIL  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e">tracked .env file (rule: project-dotenv-file)</tspan>
+</text>
+<text y="136" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">docs-check       </tspan>
+<tspan x="167.64999999999998" fill="#ff7b72">FAIL  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e">src/ changed with no docs or CHANGELOG entry</tspan>
+</text>
+<text y="160" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">Policy gates     </tspan>
+<tspan x="167.64999999999998" fill="#ff7b72">FAIL  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e">hard-coded currency "USD" and time zone "Europe/Berlin"</tspan>
+</text>
+<text y="184" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">Flag expiry      </tspan>
+<tspan x="167.64999999999998" fill="#3fb950">PASS  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e"></tspan>
+</text>
+<text y="208" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">PR size          </tspan>
+<tspan x="167.64999999999998" fill="#ff7b72">FAIL  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e">1331 changed lines, limit is 800</tspan>
+</text>
+<text y="232" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">Stack gates      </tspan>
+<tspan x="167.64999999999998" fill="#ff7b72">FAIL  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e">test failed (tax rate)</tspan>
+</text>
+<text y="256" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3">Renovate config  </tspan>
+<tspan x="167.64999999999998" fill="#3fb950">PASS  </tspan>
+<tspan x="218.34999999999997" fill="#8b949e"></tspan>
+</text>
+<text y="280" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#e6edf3"></tspan>
+</text>
+<text y="304" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace" font-size="14" xml:space="preserve">
+<tspan x="24" fill="#ff7b72">5 gates failed. </tspan>
+<tspan x="159.2" fill="#8b949e">Nothing merged. The secret never reached main.</tspan>
+</text>
+</svg>

@@ -1,0 +1,22 @@
+// markdownlint rules for docs-check. Copy to .github/docs-check/.markdownlint.jsonc.
+// This starter enforces structure (heading levels, fences, tables, inline HTML).
+// Spacing and line-length rules are off until you do a one-time reformat
+// (markdownlint-cli2 --fix) and then turn them on. Line length stays off:
+// prose in some languages has no sensible limit.
+{
+  "default": true,
+  "MD013": false,
+  "MD022": false,
+  "MD031": false,
+  "MD032": false,
+  "MD058": false,
+  // Table alignment style: off, so tables can be written compactly.
+  "MD060": false,
+  // Right-to-left guides may open with a <div dir="rtl"> before the title.
+  "MD041": false,
+  // Bold lead-ins ("**Rule.** text") are allowed.
+  "MD036": false,
+  // Changelogs repeat "Added", "Changed"... under each version.
+  "MD024": { "siblings_only": true },
+  "MD033": { "allowed_elements": ["details", "summary", "div", "span", "br", "sup", "sub", "kbd", "img", "p", "a"] }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Shared dependency-update policy. Put this file at renovate/default.json in the repository that owns the shared gates; every repository extends it from renovate.json. Edit timezone and schedule for your team. Stack-specific rules (groups, ignored majors) go in the stack references.",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigestsToSemver"],
+  "timezone": "UTC",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "pin",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "minimumReleaseAge": "14 days",
+  "internalChecksFilter": "strict",
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "automerge": false,
+  "packageRules": [
+    {
+      "description": "Security updates are raised at once, without waiting for the release-age delay.",
+      "matchCategories": ["security"],
+      "minimumReleaseAge": null,
+      "schedule": ["at any time"],
+      "labels": ["dependencies", "security"]
+    },
+    {
+      "description": "Major updates wait for approval on the dependency dashboard.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "One pull request for all GitHub Actions updates; digests stay pinned.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "pinDigests": true
+    },
+    {
+      "description": "Docker base images are pinned to digests.",
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+name: Request or propose a stack
+description: Support for another language or framework
+labels: [stack]
+body:
+  - type: input
+    id: stack
+    attributes:
+      label: Stack or framework
+      placeholder: "Swift / iOS, Elixir / Phoenix, Deno ..."
+    validations: { required: true }
+  - type: textarea
+    id: tools
+    attributes:
+      label: The standard commands
+      description: How do people in that ecosystem install from a lockfile, format, lint, type-check, test, build and audit?
+    validations: { required: true }
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help?
+      options:
+        - label: I can write the engine and fixtures (see CONTRIBUTING, "Add a stack")
+        - label: I can review it with the real toolchain

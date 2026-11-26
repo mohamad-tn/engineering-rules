@@ -1,0 +1,58 @@
+# Project gates for a repository that uses SHARED gates owned by an "infra"
+# repository (multi-repository setup). The scripts, the secret-scan rules, the
+# policy files and the tool pins live in <org>/infra and are called through the
+# composite actions in templates/shared-actions/. The caller can pass inputs
+# but cannot weaken a gate, because the action is pinned to a reviewed commit
+# of infra.
+#
+# Fill in: <org>, and the commit SHA of the infra commit you reviewed (the
+# SAME sha for all four actions; bump them together when infra changes).
+# If infra is private, allow its actions to be used by the other repositories
+# (repository settings -> Actions -> Access).
+name: project-gates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-gates-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+
+      - uses: <org>/infra/.github/actions/secret-scan@<infra-commit-sha>
+
+      - uses: <org>/infra/.github/actions/docs-check@<infra-commit-sha>
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          pr-title: ${{ github.event.pull_request.title }}
+          pr-labels-json: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          # Files copied from infra (for example AGENTS.md) are not mapped here.
+          synced-files: AGENTS.md,.gitleaks.toml
+
+      - uses: <org>/infra/.github/actions/policy-gates@<infra-commit-sha>
+
+      - uses: <org>/infra/.github/actions/pr-size@<infra-commit-sha>
+        if: github.event_name == 'pull_request'
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          pr-labels-json: ${{ toJSON(github.event.pull_request.labels.*.name) }}

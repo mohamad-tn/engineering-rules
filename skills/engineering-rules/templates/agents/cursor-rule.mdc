@@ -1,0 +1,12 @@
+---
+description: Repository engineering rules and pull-request gates
+alwaysApply: true
+---
+
+Follow `AGENTS.md` at the repository root. It is the single rules file.
+
+- Small tasks: about 400 changed lines per pull request.
+- Run `bash .github/scripts/local-proof.sh` before asking for review and paste the result.
+- Never merge, never commit secrets, never hard-code configuration, never skip a gate.
+- Missing requirement or decision: write an open question instead of guessing.
+- Docs and `CHANGELOG.md` change in the same pull request as the code.

@@ -1,0 +1,20 @@
+# CODEOWNERS. The last matching pattern wins.
+# Branch protection on the default branch must require a code-owner review
+# (a forge setting, not a file; see references/workflow.md).
+# Start with one owner. Split sensitive paths to separate teams when those
+# teams exist: repeating the owner on them keeps them owned later.
+
+* @<owner>
+
+# The rules file and everything that enforces it.
+/AGENTS.md @<owner>
+/.github/ @<owner>
+/.gitleaks.toml @<owner>
+/renovate.json @<owner>
+
+# Security allowlists (anonymous endpoints, public surface), if you have them.
+/security/ @<owner>
+
+# Decisions and the rules-to-checks map.
+/docs/adr/ @<owner>
+/docs/rules-compliance.md @<owner>

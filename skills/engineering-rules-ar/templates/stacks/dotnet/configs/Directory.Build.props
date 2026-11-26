@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Default</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Public API projects must document every public member: rename the suffixes. -->
+    <RequireXmlDocs>false</RequireXmlDocs>
+    <RequireXmlDocs Condition="$(MSBuildProjectName.EndsWith('.Contracts')) or $(MSBuildProjectName.EndsWith('.Api'))">true</RequireXmlDocs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RequireXmlDocs)' != 'true'">
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

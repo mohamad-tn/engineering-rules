@@ -1,0 +1,188 @@
+# CI for this repository: runs the same suites you can run locally with
+#   bash tests/run-all.sh
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  static:
+    name: static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - name: Install actionlint and lychee (pinned, checksum-verified)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          bash skills/engineering-rules/scripts/install-release-tool.sh \
+            "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz" \
+            8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 actionlint "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          set -a; . skills/engineering-rules/templates/tool-pins.env; set +a
+          bash skills/engineering-rules/scripts/ensure-tool.sh lychee
+      - run: bash tests/run-all.sh static
+
+  core:
+    name: core gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - run: bash tests/run-all.sh core
+      - run: bash tests/run-all.sh parity
+      - run: bash tests/run-all.sh context
+
+  stacks:
+    name: stack gates (real toolchains)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        with:
+          ruby-version: "3.3"
+      - run: rustup toolchain install stable --profile minimal --component clippy --component rustfmt && rustup default stable
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake cppcheck clang-format
+      - name: Install hadolint and OpenTofu (pinned, checksum-verified)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/engineering-rules-skill/tools/bin"
+          cd "$HOME/.cache/engineering-rules-skill/tools/bin"
+          curl -sSL -o hadolint https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64
+          echo "c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507  hadolint" | sha256sum -c -
+          chmod +x hadolint
+          cd "$GITHUB_WORKSPACE"
+          bash skills/engineering-rules/scripts/install-release-tool.sh \
+            https://github.com/opentofu/opentofu/releases/download/v1.13.9/tofu_1.13.9_linux_amd64.zip \
+            bc44eb6b06446ba83bd4072114891987f590f66cca712737a7f1147c50c539ce tofu "$HOME/.cache/engineering-rules-skill/tools/bin"
+      - run: bash tests/run-all.sh stacks
+
+  installer:
+    name: installer, doctor and demo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - run: bash tests/run-all.sh installer
+      - run: bash tests/run-all.sh adoption
+      - run: bash tests/run-all.sh portability
+      - run: bash tests/run-all.sh demo
+
+  # Experimental until these two jobs have been green on GitHub for a while: the
+  # real Flutter and Maven toolchains could not be run where this suite was authored.
+  flutter:
+    name: flutter (real SDK, experimental)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+      - run: bash skills/engineering-rules/scripts/stack-gates.sh --root tests/fixtures/flutter/good
+        env:
+          STACK_REQUIRE: deps,test
+
+  java:
+    name: java (real Maven, experimental)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: bash skills/engineering-rules/scripts/stack-gates.sh --root tests/fixtures/java-maven/real
+        env:
+          STACK_REQUIRE: deps,test,build
+
+  # Experimental until green for a while: the scripts target bash 4+ on macOS (Homebrew)
+  # and Git Bash on Windows; those systems cannot be run where this suite was authored.
+  macos:
+    name: macos (experimental)
+    runs-on: macos-15
+    continue-on-error: true
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - name: Install bash 4+ and jq
+        run: brew install bash jq
+      - run: /opt/homebrew/bin/bash skills/engineering-rules/scripts/selftest.sh
+      - run: /opt/homebrew/bin/bash tests/test-portability.sh
+
+  windows:
+    name: windows git bash (experimental)
+    runs-on: windows-2025
+    continue-on-error: true
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - run: bash skills/engineering-rules/scripts/selftest.sh

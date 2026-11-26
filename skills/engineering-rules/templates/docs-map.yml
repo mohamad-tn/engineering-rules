@@ -1,0 +1,28 @@
+# docs-check path map. When a changed file matches a `code` glob, at least one
+# file matching one of the entry's `docs` globs must change in the same pull
+# request (unless the exception label is used and a reviewer accepts the reason).
+#
+# Format (a strict subset of YAML, so the gate needs no dependency):
+#   - code: "<glob>"
+#     docs: ["<glob>", "<glob>"]
+# Globs: ** spans folders, * and ? stay in one folder, {a,b} is a choice.
+# Every entry is checked on its own, so put specific entries before the
+# catch-all for readability. Replace every example below with your own layout.
+
+# A user-facing module and the feature doc that describes it.
+- code: "src/<module>/**"
+  docs: ["docs/features/<module>.md", "CHANGELOG.md"]
+
+# Infrastructure and workflows are documented in the CI docs.
+- code: ".github/workflows/**"
+  docs: ["docs/ci/**", "docs/rules-compliance.md"]
+- code: ".github/scripts/**"
+  docs: ["docs/ci/**"]
+
+# Schema changes need data-model docs.
+- code: "src/**/Migrations/**"
+  docs: ["docs/architecture/data-model.md"]
+
+# Catch-all: any change needs the changelog or some documentation.
+- code: "**"
+  docs: ["CHANGELOG.md", "docs/**"]

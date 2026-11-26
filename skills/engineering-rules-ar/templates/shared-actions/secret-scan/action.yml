@@ -1,0 +1,13 @@
+# Place in <org>/infra at .github/actions/secret-scan/action.yml.
+# Scans the caller's full history with infra's canonical .gitleaks.toml, so a
+# weakened local copy changes nothing in CI.
+name: Secret scan (gitleaks)
+description: Full-history secret scan with the canonical rules and pinned tool.
+runs:
+  using: composite
+  steps:
+    - name: Scan
+      shell: bash
+      env:
+        TOOL_PINS_FILE: ${{ github.action_path }}/../../tool-pins.env
+      run: bash "${GITHUB_ACTION_PATH}/../../scripts/gitleaks-scan.sh" "${GITHUB_ACTION_PATH}/../../../.gitleaks.toml"

@@ -1,0 +1,10 @@
+== AFTER: the same feature, rewritten to the rules
+| Gate | Command | Result |
+|---|---|---|
+| Secret scan | `gitleaks-scan.sh` | PASS |
+| docs-check | `docs-check.sh` | PASS |
+| Policy gates | `policy-gates.mjs` | PASS |
+| Flag expiry | `feature-flag-expiry.mjs` | PASS |
+| PR size | `pr-size-check.sh` | PASS |
+| Stack gates | `stack-gates.sh` | PASS |
+| Renovate config | `renovate-config-check.sh` | PASS |

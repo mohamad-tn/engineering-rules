@@ -1,0 +1,25 @@
+# Place in <org>/infra at .github/actions/pr-size/action.yml.
+name: PR size
+description: Fail a pull request above the size threshold unless it carries the reason label.
+inputs:
+  base-sha:
+    description: Pull request base commit
+    required: true
+  head-sha:
+    description: Pull request head commit
+    required: true
+  pr-labels-json:
+    description: JSON array of pull request label names
+    required: false
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - name: Check size
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        PR_LABELS_JSON: ${{ inputs.pr-labels-json }}
+        PR_SIZE_EXCLUDE_FILE: ${{ github.action_path }}/../../pr-size-exclude.txt
+      run: bash "${GITHUB_ACTION_PATH}/../../scripts/pr-size-check.sh"

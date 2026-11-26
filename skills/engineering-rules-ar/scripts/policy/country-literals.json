@@ -1,0 +1,26 @@
+{
+  "$comment": "Environment-assumption gate: product code must not hard-code a currency, region, time zone, dial prefix or a named place. Copy this file to .github/policy/ to customize it. Add your own launch place names to placeNames (empty by default).",
+  "codeExtensions": [".cs", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".java", ".kt", ".swift", ".dart", ".py", ".go", ".rb", ".php"],
+  "excludedPathPatterns": [
+    "(^|/)docs/",
+    "(^|/)test/",
+    "(^|/)tests/",
+    "(^|/)__tests__/",
+    "(^|/)e2e/",
+    "\\.test\\.[cm]?[jt]sx?$",
+    "\\.spec\\.[cm]?[jt]sx?$",
+    "Tests?\\.cs$",
+    "(^|/)[Ss]eed[A-Za-z]*/",
+    "SeedContributor\\.cs$",
+    "(^|/)seed-data/",
+    "(^|/)fixtures/",
+    "(^|/)Migrations/",
+    "(^|/)generated/",
+    "(^|/)dist/",
+    "(^|/)scripts/policy-gates\\.mjs$"
+  ],
+  "currencyCodes": ["USD", "EUR", "GBP", "JPY", "CNY", "INR", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK", "PLN", "BRL", "MXN", "ZAR", "KRW", "SGD", "HKD", "TRY", "AED", "SAR", "RUB"],
+  "regionCodes": ["US", "GB", "DE", "FR", "ES", "IT", "NL", "SE", "CH", "CA", "AU", "NZ", "JP", "CN", "KR", "BR", "MX", "AE", "SA", "TR", "ZA"],
+  "timeZoneAreas": ["Africa", "America", "Antarctica", "Asia", "Atlantic", "Australia", "Europe", "Indian", "Pacific"],
+  "placeNames": []
+}

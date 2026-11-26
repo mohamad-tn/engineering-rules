@@ -1,0 +1,37 @@
+# Paths excluded from the PR size gate.
+# A trailing slash matches that directory anywhere in the path.
+# A pattern with no slash matches the file name.
+# A pattern with a slash matches the end of the path.
+# Blank lines and lines starting with # are ignored.
+# Keep this list in version control and review changes to it: widening it
+# weakens the gate.
+
+# Lockfiles
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+packages.lock.json
+composer.lock
+Gemfile.lock
+poetry.lock
+Pipfile.lock
+Cargo.lock
+go.sum
+pubspec.lock
+gradle.lockfile
+Podfile.lock
+Package.resolved
+
+# Snapshots
+*.snap
+__snapshots__/
+
+# Generated code
+generated/
+*.g.cs
+*.g.dart
+*.generated.ts
+*.generated.cs
+dist/

@@ -1,0 +1,15 @@
+# Place in <org>/infra at .github/actions/policy-gates/action.yml.
+# Rules (prerelease allowlist, environment literals, flag registry paths) are
+# read from infra's .github/policy/, not from the caller.
+name: Policy gates
+description: Prerelease dependencies, environment-assumption literals, feature-flag expiry.
+runs:
+  using: composite
+  steps:
+    - name: Policy gates
+      shell: bash
+      env:
+        POLICY_DIR: ${{ github.action_path }}/../../policy
+      run: |
+        node "${GITHUB_ACTION_PATH}/../../scripts/policy-gates.mjs" .
+        node "${GITHUB_ACTION_PATH}/../../scripts/feature-flag-expiry.mjs" .

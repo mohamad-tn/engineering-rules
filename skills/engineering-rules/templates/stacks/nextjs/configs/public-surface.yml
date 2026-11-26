@@ -1,0 +1,8 @@
+# Hosts the browser may contact besides its own origin. Keep it empty if every
+# call goes through your server layer. Changes need a code-owner review.
+exceptions: []
+# Example entry (remove the line above first):
+# exceptions:
+#   - host: analytics.example.com
+#     reason: product analytics script
+#     owner: "@<owner>"

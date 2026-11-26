@@ -1,0 +1,43 @@
+# Place in <org>/infra at .github/actions/docs-check/action.yml.
+# The required-docs list (one key per repository name), the markdown rules and
+# the check logic come from infra. The docs map (docs/docs-map.yml) stays in
+# each caller, because it describes that repository's own layout.
+name: docs-check
+description: Required docs, docs map, changelog rule, markdown lint, internal links.
+inputs:
+  base-sha:
+    description: Pull request base commit (empty on push)
+    required: false
+    default: ""
+  head-sha:
+    description: Pull request head commit (empty on push)
+    required: false
+    default: ""
+  pr-title:
+    description: Pull request title
+    required: false
+    default: ""
+  pr-labels-json:
+    description: JSON array of pull request label names
+    required: false
+    default: "[]"
+  synced-files:
+    description: Comma list of files copied from infra (not mapped in the caller)
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: docs-check
+      shell: bash
+      env:
+        TOOL_PINS_FILE: ${{ github.action_path }}/../../tool-pins.env
+        DOCS_LINT_CONFIG: ${{ github.action_path }}/../../docs-check/.markdownlint.jsonc
+        DOCS_REQUIRED_FILE: ${{ github.action_path }}/../../docs-check/required-docs.json
+        REPO_NAME: ${{ github.event.repository.name }}
+        DOCS_SYNCED_FILES: ${{ inputs.synced-files }}
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        PR_LABELS_JSON: ${{ inputs.pr-labels-json }}
+      run: bash "${GITHUB_ACTION_PATH}/../../scripts/docs-check.sh" .
