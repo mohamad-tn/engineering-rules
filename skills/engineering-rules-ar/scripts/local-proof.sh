@@ -16,7 +16,9 @@
 # stack gates (every detected stack), dependency-bot config. A gate that cannot run (tool missing) is reported as
 # NOT RUN and makes the script fail, unless --allow-missing is given; a gate
 # that did not run is not proof.
-# Exit status: 0 only when every gate passed.
+# Exit status: 0 when no gate failed and no gate is missing, unless --allow-missing
+# explicitly relaxes the exit status. Fast mode may exit 0 for development,
+# but JSON still reports ok=false and proof_complete=false for partial results.
 set -uo pipefail
 
 # This script needs bash 4 or newer. macOS ships bash 3.2: use a newer one if it is installed.
@@ -61,6 +63,11 @@ while (($#)); do
   esac
 done
 
+if ((json)) && ! command -v node >/dev/null 2>&1; then
+  echo "--json requires Node.js to serialize the result safely." >&2
+  exit 2
+fi
+
 # Finds a gate script next to this one (after copying into .github/scripts/)
 # or in the package layout (../templates/).
 find_script() {
@@ -85,17 +92,17 @@ if [[ -z "$base" ]]; then
 fi
 [[ -n "$base" ]] || { echo "Cannot find a base commit. Pass --base <sha> (is origin/${default_branch} fetched?)." >&2; exit 2; }
 [[ -n "$title" ]] || title="$(git log -1 --format=%s)"
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "Uncommitted changes: results belong to a commit. Commit first." >&2
+if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+  echo "Uncommitted tracked or untracked changes: results belong to a commit. Commit or remove them first." >&2
   exit 2
 fi
 
-labels_json="["
-for i in "${!labels[@]}"; do
-  ((i > 0)) && labels_json+=","
-  labels_json+="\"${labels[$i]//\"/}\""
-done
-labels_json+="]"
+if command -v node >/dev/null 2>&1; then
+  labels_json="$(node -e 'process.stdout.write(JSON.stringify(process.argv.slice(1)))' "${labels[@]}")"
+else
+  labels_json='[]'
+  if ((${#labels[@]})); then echo "Node.js is required to serialize pull-request labels safely." >&2; exit 2; fi
+fi
 
 results=() details=() jrows=()
 failed=0 missing=0
@@ -162,6 +169,7 @@ fi
 if ((no_stack)); then
   results+=("| Stack gates | \`stack-gates.sh\` | SKIPPED (--no-stack; not proof) |")
   jrows+=("Stack gates	SKIPPED	stack-gates.sh")
+  missing=1
 elif [[ -f "${here}/stack-gates.sh" ]]; then
   stack_args=(--root .)
   ((fast)) && stack_args+=(--fast)
@@ -169,12 +177,20 @@ elif [[ -f "${here}/stack-gates.sh" ]]; then
   bash "${here}/stack-gates.sh" "${stack_args[@]}" >"$stack_log" 2>&1
   stack_status=$?
   case "$stack_status" in
-    0) results+=("| Stack gates | \`stack-gates.sh\` | PASS |"); jrows+=("Stack gates	PASS	stack-gates.sh") ;;
+    0)
+      if ((fast)); then
+        results+=("| Stack gates | \`stack-gates.sh --fast\` | SKIPPED (build/audit; development only, not full proof) |")
+        jrows+=("Stack gates	SKIPPED	stack-gates.sh --fast")
+      else
+        results+=("| Stack gates | \`stack-gates.sh\` | PASS |"); jrows+=("Stack gates	PASS	stack-gates.sh")
+      fi ;;
     3) results+=("| Stack gates | \`stack-gates.sh\` | N/A (no supported stack found) |"); jrows+=("Stack gates	NA	stack-gates.sh") ;;
     *) results+=("| Stack gates | \`stack-gates.sh\` | **FAIL** (exit ${stack_status}) |"); jrows+=("Stack gates	FAIL	stack-gates.sh"); failed=1 ;;
   esac
   details+=("<details><summary>Stack gates output (last 60 lines)</summary>"$'\n\n```text\n'"$(tail -n 60 "$stack_log")"$'\n```\n\n</details>')
   rm -f "$stack_log"
+else
+  not_run "Stack gates" "stack-gates.sh" "script not found"
 fi
 
 # Dependency-bot config (only when the repository uses it).
@@ -202,12 +218,19 @@ fi
 }
 
 if ((json)); then
+  stack_mode=full
+  if ((no_stack)); then stack_mode=skipped
+  elif ((fast)); then stack_mode=fast; fi
   printf '%s\n' "${jrows[@]}" | node -e '
     const rows = require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean).map((l) => l.split("\t"));
     const gates = rows.map(([gate, status, command]) => ({ gate, status, command }));
-    const ok = gates.every((g) => g.status === "PASS" || g.status === "NA");
-    process.stdout.write(JSON.stringify({ ok, commit: process.argv[1], base: process.argv[2], gates }, null, 2) + "\n");
-  ' "$head_sha" "$base"
+    const stack_mode = process.argv[3];
+    const proof_complete = gates.every((g) => g.status === "PASS" || g.status === "NA");
+    const execution_ok = gates.every((g) => g.status === "PASS" || g.status === "NA" ||
+      (stack_mode === "fast" && g.gate === "Stack gates" && g.status === "SKIPPED"));
+    process.stdout.write(JSON.stringify({ ok: proof_complete, execution_ok, proof_complete,
+      stack_mode, commit: process.argv[1], base: process.argv[2], gates }, null, 2) + "\n");
+  ' "$head_sha" "$base" "$stack_mode"
 fi
 
 if ((failed)); then exit 1; fi

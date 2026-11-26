@@ -10,7 +10,7 @@ bash tests/run-all.sh stacks       # one suite: core | stacks | installer | port
 | Suite | File | What it checks |
 |---|---|---|
 | core | `skills/engineering-rules/scripts/selftest.sh` | PR size, docs-check, policy gates, flag expiry, SHA-256 lock, offline CI event: each passes on good input and fails on bad |
-| stacks | `tests/test-stacks.sh` | every engine on good and bad fixtures; the required-gate policy; overrides; monorepo detection; command-level tests with stubs |
+| stacks | `tests/test-stacks.sh`, `tests/test-quality.py`, `tests/test-proof-quality.py` | engine fixtures, required results, overrides, monorepos, path handling, audit failure propagation, and partial-proof semantics; command-level stubs do not replace real SDK tests |
 | installer | `tests/test-installer.sh` | installing into repositories, never overwriting, options, `doctor.sh`, and a full `local-proof.sh` in an adopted repository |
 | demo | `tests/test-demo.sh` | the before/after demo fails five gates for the stated reasons, then passes all |
 | portability | `tests/test-portability.sh` | macOS (bash 3.2, BSD sed, no GNU timeout) and Git Bash differences, simulated with shims; paths with spaces |

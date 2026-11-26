@@ -36,6 +36,48 @@ if need python3 "python fixtures"; then
   check_fixture "python: good project passes" python/good pass "lint +PASS" STACK_SKIP_GATES=audit
   check_fixture "python: lint, format and test failures" python/bad fail "lint +FAIL"
   check_fixture "python: unpinned requirements fail" python/unpinned fail "pinned +FAIL"
+  dir="$(fixture_copy python/good)"
+  printf 'pytest\n' >"$dir/requirements-dev.txt"
+  run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
+  if [[ "$RC" == 1 ]] && grep -q 'requirements-dev.txt:1: requirement must use one exact == version pin: pytest' <<<"$OUT"; then
+    ok "python: unpinned development requirements fail"
+  else
+    bad "python: unpinned development requirements were accepted"; printf '%s\n' "$OUT" | tail -n 10 >&2
+  fi
+  rm -rf "$dir"
+  dir="$(fixture_copy python/good)"
+  mkdir -p "$dir/requirements"
+  printf '%s\n' '-r requirements/extra.txt' >"$dir/requirements-dev.txt"
+  printf '%s\n' '-c ../constraints.txt' >"$dir/requirements/extra.txt"
+  printf 'pytest\n' >"$dir/constraints.txt"
+  run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
+  if [[ "$RC" == 1 ]] && grep -q 'constraints.txt:1: requirement must use one exact == version pin: pytest' <<<"$OUT"; then
+    ok "python: unpinned requirements in nested -r/-c files fail"
+  else
+    bad "python: unpinned nested requirements were accepted"; printf '%s\n' "$OUT" | tail -n 10 >&2
+  fi
+  rm -rf "$dir"
+  dir="$(fixture_copy python/good)"
+  for bad_req in \
+    'requests; python_version == "3.12"' \
+    'requests>=2; python_version == "3.12"' \
+    'requests @ https://example.invalid/requests.whl' \
+    '-e git+https://example.invalid/repo.git@main#egg=thing'; do
+    printf '%s\n' "$bad_req" >"$dir/requirements-dev.txt"
+    run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
+    if [[ "$RC" == 1 ]] && grep -qE 'pinned +FAIL' <<<"$OUT"; then
+      ok "python: unpinned PEP 508/direct/editable requirement is rejected"
+    else
+      bad "python: accepted unsafe requirement: $bad_req"; printf '%s\n' "$OUT" | tail -n 8 >&2
+    fi
+  done
+  printf '# ordinary comment\npytest==8.3.4\n' >"$dir/requirements-dev.txt"
+  run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
+  if [[ "$RC" == 0 ]] && grep -qE 'pinned +PASS' <<<"$OUT"; then ok "python: full-line comments are ignored by pin checker"; else bad "python: valid comment rejected"; fi
+  printf 'pytest \\\n' >"$dir/requirements-dev.txt"
+  run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
+  if [[ "$RC" == 1 ]] && grep -qE 'pinned +FAIL' <<<"$OUT"; then ok "python: incomplete requirement continuation fails"; else bad "python: incomplete continuation was accepted"; fi
+  rm -rf "$dir"
 fi
 if need bundle "ruby fixtures"; then
   check_fixture "ruby: good project passes" ruby/good pass "test +PASS" STACK_SKIP_GATES=audit
@@ -57,6 +99,15 @@ if need npm "node fixtures"; then
   check_fixture "node: good project passes" node/good pass "build +PASS"
   check_fixture "node: failing test fails" node/bad fail "test +FAIL"
   check_fixture "node: missing lockfile fails" node/nolock fail "no lockfile"
+  dir="$(fixture_copy node/good)"
+  cp "$dir/package-lock.json" "$dir/pnpm-lock.yaml"
+  run_stack "$dir" STACK_ONLY=deps
+  if [[ "$RC" == 1 ]] && grep -q "multiple lockfiles found" <<<"$OUT"; then
+    ok "node: multiple lockfiles fail with an explicit manager-conflict message"
+  else
+    bad "node: ambiguous lockfiles were not rejected"; printf '%s\n' "$OUT" | tail -n 10 >&2
+  fi
+  rm -rf "$dir"
   check_fixture "react (vite): build passes" react/good pass "framework: react" STACK_SKIP_GATES=audit
   check_fixture "next.js: build passes" nextjs/good pass "framework: nextjs" STACK_SKIP_GATES=audit
   # the vulnerable Next.js version in the fixture must be caught by the audit gate
@@ -180,6 +231,20 @@ printf x >"$dir/release.keystore"   # created at test time: no key files are sto
 run_stack "$dir" STACK_SKIP_INSTALL=1 STACK_SKIP_GATES=audit,expo-export
 if [[ "$RC" == 1 ]] && grep -qE "secrets-files +FAIL" <<<"$OUT"; then ok "react native: tracked keystore and cleartext URL fail"; else bad "expo bad case rc=$RC"; printf '%s\n' "$OUT" | tail -n 12 >&2; fi
 rm -rf "$dir"
+
+# Userinfo must not make an untrusted cleartext host look like localhost.
+dir="$(fixture_copy expo/good)"
+printf 'export const api = "http://localhost@evil.example/api";\n' >"$dir/src/config.js"
+if (cd "$dir" && SOURCE_ROOTS=src/ node "${SKILL}/scripts/stacks/tools/check-tracked-secrets.mjs") >/tmp/url-scan.out 2>&1; then
+  bad "mobile secret scanner accepted http://localhost@evil.example"
+else
+  if grep -q "forbidden content" /tmp/url-scan.out; then
+    ok "mobile secret scanner checks parsed URL host, not userinfo"
+  else
+    bad "unexpected URL scanner failure"; cat /tmp/url-scan.out >&2
+  fi
+fi
+rm -rf "$dir" /tmp/url-scan.out
 
 # rails: bundle and bin/rails are stubs; Gemfile.lock lists rails, rubocop, brakeman, bundler-audit
 stub_case "rails: rubocop, brakeman, rails test, bundler-audit" rails/good pass "framework: rails" \

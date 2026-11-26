@@ -16,7 +16,7 @@
 
 # قواعد الهندسة (engineering-rules)
 
-**حواجز أمان للكود السريع، وللكود الذي يكتبه الذكاء الاصطناعي.** أمر واحد يضيف إلى أي مستودع مجموعة صغيرة من قواعد الهندسة وفحوصًا آلية حقيقية تُسمّى «بوابات» (Gates). وكل طلب دمج (Pull Request) يحمل إثباتًا أن الفحوص نجحت، سواء على `GitHub Actions` أو على جهازك. تعمل مع `Claude Code` و`Cursor` و`Codex` و`Copilot` و`Gemini` ومع الفرق البشرية العادية.
+**حواجز هندسية عملية للكود الذي يكتبه البشر أو بمساعدة الذكاء الاصطناعي.** أضف ملف `AGENTS.md` مختصرًا وفحوصًا قابلة لإعادة الاستخدام وقوالب CI بحسب التقنية إلى مستودع Git قائم. شغّل الفحوص محليًا أو اربط السكربتات نفسها بـ CI؛ ويمكن توليد كتلة نتائج للتغييرات المحفوظة في commit. يتضمن المستودع تكاملات لـ `Claude Code` و`Cursor` و`Codex` و`GitHub Copilot` و`Gemini` و`Windsurf`. يعتمد نطاق الفحوص على النمط والتقنية وإعدادات المشروع والأدوات المثبّتة.
 
 <div dir="ltr">
 
@@ -26,8 +26,7 @@ bash skills/engineering-rules-ar/scripts/install.sh --target ./my-project
 
 </div>
 
-يكتشف التقنية المستخدمة (`Node` و`Next.js` و`React` و`React Native` و`Vue` و`Angular` و`.NET` و`Laravel` و`Flutter` و`Python` و`Java` و`Go` و`Rust` و`Ruby` و`Swift` و`C/C++` و`Terraform` و`Docker`)، ويجهّز الفحوص، ولا يكتب فوق أي ملف موجود عندك.
-البوابات الأساسية — الأسرار والوثائق وحجم طلب الدمج والسياسة — تعمل في كل مستودع Git، حتى لو لم يكن للغة مشروعك محرك تقنية بعد. وغياب المحرك لا يُعرض أبدًا على أنه نجاح لفحص التقنية.
+يكتشف التقنيات المدعومة (`Node.js` و`Next.js` و`React` و`React Native` و`Vue` و`Angular` و`.NET` و`Laravel` و`Flutter` و`Python` و`Java` و`Go` و`Rust` و`Ruby` و`Swift` و`C/C++` و`Terraform` و`Docker`) ويضيف مجموعة أولية من الفحوص دون الكتابة فوق الملفات الموجودة افتراضيًا. الفحوص الأساسية مستقلة عن التقنية؛ أما بوابات كل تقنية فتختلف حسب المحرك وإعدادات المشروع. ولا يُعرض غياب محرك تقنية مدعوم على أنه نجاح.
 
 > **اصطلاح الكتابة في هذه النسخة:** الأوامر وأسماء الملفات والأدوات والأطر تُكتب بخط الكود وتبقى بالإنجليزية. والمصطلحات الإنجليزية داخل الجمل توضع بين أقواس بعد المقابل العربي. ملفات المساهمة والأمان (`CONTRIBUTING.md` و`SECURITY.md`) بالإنجليزية.
 
@@ -49,14 +48,14 @@ bash skills/engineering-rules-ar/scripts/install.sh --target ./my-project
 | انتهت دقائق الـ CI أو تعطل | يتوقف العمل أو يدمج الناس بلا فحوص |
 | مساعد ذكاء اصطناعي «ينهي» المهمة ويقول إنها تعمل | لا شيء يثبت ذلك |
 
-هذا المشروع يحوّل كل مشكلة من هذه إلى فحص يفشل بصوت عالٍ، وإلى عادة رخيصة الاتباع.
+يحوّل المشروع عددًا من مخاطر التسليم المتكررة إلى فحوص آلية وممارسات مراجعة موثقة. إنه خط أساس قابل للتهيئة، وليس بديلًا عن مراجعة الكود أو الاستجابة للحوادث أو اختبارات الأمان الخاصة بالتطبيق أو حماية الفرع.
 
 ## ما هو
 
 - **ملف قواعد قصير** (`AGENTS.md`) يتبعه البشر ومساعدو الذكاء الاصطناعي بالطريقة نفسها.
 - **بوابات**: سكربتات تُفشل طلب الدمج بسبب المشاكل أعلاه. هي سكربتات `shell` و`Node` عادية، فتعمل في أي CI وعلى جهازك.
-- **بوابات التقنية** لـ `Node` و`React` و`Vue` و`Angular` و`Next.js` و`React Native` و`.NET` و`Laravel` و`Flutter` و`Python` و`Java` و`Go` و`Rust` و`Ruby` و`Swift` و`C/C++` و`Terraform` و`Docker`: ملف القفل، والتثبيت، والتنسيق، وفحص الكود، والأنواع، والاختبارات، والبناء، والتدقيق. إذا لم تكن لغتك في هذه القائمة، تبقى البوابات الأساسية شغالة.
-- **إثبات**: الأمر `local-proof.sh` يشغّل كل شيء ويطبع كتلة تلصقها في طلب الدمج. لا حاجة لـ CI مدفوع.
+- **محركات التقنية** لـ `Node` و`React` و`Vue` و`Angular` و`Next.js` و`React Native` و`.NET` و`Laravel` و`Flutter` و`Python` و`Java` و`Go` و`Rust` و`Ruby` و`Swift` و`C/C++` و`Terraform` و`Docker`. تختلف البوابات المتاحة حسب التقنية وسكربتات المشروع والأدوات والنمط؛ ولكل من `SKIP` و`NOT RUN` و`N/A` معنى مختلف.
+- **نتائج محلية**: يشغّل `local-proof.sh` الفحوص المهيأة ويطبع كتلة لتغيير محفوظ في commit. ويظهر البوابة التي لم تعمل؛ الخياران `--allow-missing` و`--no-stack` لا يعنيان إثبات نجاح. استخدام CI المستضاف وحماية الفرع قرار للفريق.
 - **مهارة وكيل** (Agent Skill) في `SKILL.md` ليعرف مساعد الذكاء الاصطناعي كيف يتبنّى كل هذا ويلتزم به.
 
 <div dir="ltr">
@@ -205,12 +204,13 @@ docs-check: CHANGELOG.md has no entry and the pull-request title type "feat" is 
 
 ```bash
 git clone https://github.com/mohamad-tn/engineering-rules.git
+# Run this from a parent directory where ./my-project is an existing Git checkout.
 bash engineering-rules/skills/engineering-rules-ar/scripts/install.sh --target ./my-project \
      --profile standard --org my-org --project my-project --owner my-handle
 cd my-project
 bash .github/scripts/doctor.sh        # checks the setup, tells you what is left
 git add -A && git commit -m "chore: adopt engineering rules"
-bash .github/scripts/local-proof.sh   # runs every gate; paste the output in your first pull request
+bash .github/scripts/local-proof.sh   # runs configured gates; disclose any NOT RUN or SKIPPED result
 ```
 
 </div>
@@ -269,7 +269,7 @@ npx skills add mohamad-tn/engineering-rules --skill engineering-rules
 | تطبيقات SaaS والويب | كل البوابات؛ `Next.js` و`React` و`Laravel` و`Django` و`Rails` و`.NET` |
 | تطبيقات الموبايل | `React Native` و`Expo` و`Flutter`؛ فحص مفاتيح التوقيع والروابط غير المشفّرة |
 | الواجهات الخلفية (APIs) | `.NET` و`Node` و`Go` و`Java` و`Python` و`Rust` و`PHP` |
-| المكتبات والحزم | النمط `strict`؛ بوابتا ملف القفل والتدقيق |
+| المكتبات والحزم | اختر النمط وفق الحاجة؛ المكتبة العامة المنشورة بلا ملف قفل تحصل على تحذير بدل فشل التطبيق |
 | الأدوات الداخلية والسكربتات وأدوات الطرفية | النمط `lite` |
 | مواقع المحتوى والتسويق | فحص الوثائق، فحص الأسرار، بوابة الحجم |
 | المستودعات الكبيرة المتعددة المشاريع (Monorepo) | كل مشروع يُكتشف ويعمل بتقنيته |

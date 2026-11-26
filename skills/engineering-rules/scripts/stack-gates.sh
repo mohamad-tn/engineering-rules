@@ -65,7 +65,7 @@ while (($#)); do
   esac
 done
 
-root="$(cd "$root" && pwd)"
+root="$(cd "$root" && pwd -P)" || { echo "stack-gates: root is not an accessible directory." >&2; exit 2; }
 # --json: stdout carries ONLY the JSON document (for agents and tools); every log goes to stderr.
 if ((json)); then exec 3>&1 1>&2; fi
 cd "$root" || exit 2
@@ -193,6 +193,17 @@ if [[ -z "$projects" ]]; then
   exit 3
 fi
 
+# Validate the explicit map too: an invalid engine or inaccessible/outside
+# directory is an input error, not an empty successful result.
+while IFS=$'\t' read -r engine dir; do
+  case "$engine" in
+    node|dotnet|php|flutter|python|java|go|rust|ruby|swift|cpp|docker|terraform) ;;
+    *) echo "stack-gates: unsupported engine: ${engine}" >&2; exit 2 ;;
+  esac
+  resolved="$(cd "${root}/${dir}" && pwd -P)" || exit 2
+  [[ "$resolved" == "$root" || "$resolved" == "$root"/* ]] || { echo "stack-gates: project directory is outside root." >&2; exit 2; }
+done <<<"$projects"
+
 if ((list_only)); then
   printf '%s\n' "$projects" | awk -F'\t' '{printf "%-8s %s\n", $1, $2}'
   exit 0
@@ -215,9 +226,11 @@ while IFS=$'\t' read -r engine dir; do
   # shellcheck disable=SC2034
   STACK_CUR_DIR="$dir"
   echo "== ${engine} · ${dir}"
+  before_rows="$(wc -l <"$STACK_RESULTS")"
   ( cd "${root}/${dir}" && "run_${engine}" "${root}/${dir}" ) || {
     fail "engine" "the ${engine} engine stopped unexpectedly"
   }
+  [[ "$(wc -l <"$STACK_RESULTS")" != "$before_rows" ]] || fail "engine" "the ${engine} engine recorded no gate results"
   echo
 done <<<"$projects"
 
@@ -249,9 +262,9 @@ verdict="$(awk -F'\t' -v require="$require" '
     }
     for (p in proj) for (g in need) {
       k = p "\t" g
-      if ((k in st) && (st[k] == "SKIP" || st[k] == "NOTRUN")) {
+      if (!(k in st) || st[k] == "SKIP" || st[k] == "NOTRUN") {
         split(p, pc, "\t")
-        printf "REQUIRED\t%s\t%s\t%s\t%s\n", pc[1], pc[2], g, why[k]
+        printf "REQUIRED\t%s\t%s\t%s\t%s\n", pc[1], pc[2], g, ((k in st) ? why[k] : "no gate result recorded")
         bad++
       }
     }

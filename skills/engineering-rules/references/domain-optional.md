@@ -29,7 +29,7 @@ All rules below start as **Review** or **Planned**: the package ships no gate fo
 | Rule | Why | How to check |
 |---|---|---|
 | Currency, tax, legal text, phone format, address format and supported languages are configuration per region, not code | adding a region must not need a release | the Universal literals gate (U10) already catches hard-coding |
-| Store and compute time in UTC; keep the region's IANA time-zone id; format only at the edge | daylight-saving and travel bugs | run time suites under several zones (D9 in the .NET adapter) |
+| Store and compute time in UTC; keep the region's IANA time-zone id; format only at the edge | daylight-saving and travel bugs | run time suites under several zones (S14 in the Swift adapter) |
 | Money is an integer in minor units plus a currency code; never a float | rounding errors | unit tests; a lint rule where available |
 | Data residency and consent differ by region; record where each class of data lives | compliance | a data map in `docs/` (**Planned**) |
 | A region can be switched off without a deploy (kill switch) | incidents and regulation | feature-flag registry with expiry (U11) |

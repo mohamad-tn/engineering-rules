@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // Node / web adapter. Fails when a built client bundle contains the private
-// backend host or a public-environment marker. Run it after the production
-// build. The goal: browsers talk only to the page's own origin (or to hosts
-// you list in your public-surface allowlist), never to a private backend.
+// backend URL/host or a configured public-environment marker. Run it after the
+// production build. This is a targeted check, not a general URL or secret inventory.
 //
 // Env:
 //   BACKEND_URL_ENV   name of the variable that holds the private API URL

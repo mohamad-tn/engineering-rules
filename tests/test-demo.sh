@@ -16,6 +16,14 @@ fi
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 export TOOLS_DIR="${TOOLS_DIR:-${HOME}/.cache/engineering-rules-skill/tools}"
 
+platform="$(uname -s)"; arch="$(uname -m)"
+if { ! command -v gitleaks >/dev/null 2>&1 || ! command -v lychee >/dev/null 2>&1; } \
+  && [[ "$platform" != Linux || "$arch" != x86_64 ]]; then
+  skipped "demo end-to-end (requires gitleaks and lychee; pinned downloads are Linux x86_64 only, current platform is ${platform}/${arch})"
+  summary
+  exit 0
+fi
+
 echo "== demo"
 out="$(bash "${REPO_ROOT}/examples/shop-api/run-demo.sh" 2>&1)"; rc=$?
 before="${out%%AFTER*}"

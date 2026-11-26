@@ -58,14 +58,15 @@ for lang, base in editions.items():
     for rule, rx in cover[lang].items():
         check(re.search(rx, agents) is not None, f"{lang} AGENTS.md does not state: {rule}")
 
-# every universal rule id of the rules index (except the ones that are tools only) must be in the coverage list
-index = (editions["en"] / "references/rules-index.md").read_text(encoding="utf-8")
-ids = re.findall(r"^\| (U\d+) \|", index, re.M)
+# Every universal rule ID must be represented in each language's coverage map.
 tool_only = {"U12", "U17"}   # Planned / helper: documented in rules-index, not an everyday rule
-covered = {k.split()[0] for k in cover["en"]}
-for rid in ids:
-    if rid not in tool_only:
-        check(rid in covered, f"rules-index rule {rid} has no coverage entry in tests/rule-coverage.json")
+for lang, base in editions.items():
+    index = (base / "references/rules-index.md").read_text(encoding="utf-8")
+    ids = re.findall(r"^\| (U\d+) \|", index, re.M)
+    covered = {k.split()[0] for k in cover.get(lang, {})}
+    for rid in ids:
+        if rid not in tool_only:
+            check(rid in covered, f"{lang} rules-index rule {rid} has no coverage entry in tests/rule-coverage.json")
 
 for b in bad:
     print("  FAIL ", b)

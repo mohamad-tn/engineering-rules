@@ -7,7 +7,7 @@
 
 | البوابة | ما تشغّله |
 |---|---|
-| `deps` | `npm ci` أو `pnpm install --frozen-lockfile` أو `yarn install --immutable` أو `bun install --frozen-lockfile`. غياب ملف القفل يعني `FAIL`. |
+| `deps` | `npm ci` أو `pnpm install --frozen-lockfile` أو `yarn install --immutable` أو `bun install --frozen-lockfile`. يفشل التطبيق بلا ملف قفل؛ أما المكتبة العامة بلا قفل فتحصل على تحذير ويُثبّت اعتمادها دون إنشاء ملف قفل. |
 | `format` | سكربت `format:check`، وإلا `Prettier` أو `Biome` إن كانا مضبوطين |
 | `lint` | سكربت `lint`، وإلا `ESLint` أو `Biome` إن كانا مضبوطين |
 | `types` | سكربت `typecheck`، وإلا `tsc --noEmit` عند وجود `tsconfig.json` |
@@ -29,7 +29,7 @@
 
 ## ملاحظات
 
-- مساحات العمل (Workspaces): الجذر يشغّل كل شيء، ولا تُشغَّل الحزم الفرعية مرتين.
+- مساحات العمل (Workspaces): الجذر يشغّل كل شيء، ولا تُشغَّل الحزم الفرعية مرتين. احتفظ بملف قفل واحد فقط في المشروع/مساحة العمل المكتشفة؛ وجود عدة ملفات ضمن البحث حتى جذر Git يفشل `deps` بدل اختيار مدير حزم بصمت.
 - لا توجد بوابات خاصة بـ `React` و`Vue` و`Angular` و`Svelte` و`Vite` غير `build`. اضبط `CLIENT_BUNDLE_DIR` و`API_BASE_URL` لتفحص الحزمة المبنية أيضًا بحثًا عن مضيف خادم خاص.
 
 </div>

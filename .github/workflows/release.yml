@@ -15,12 +15,25 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: lts/*
-      - name: Check the core gates before releasing
-        run: bash tests/run-all.sh core
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python3 -m pip install --disable-pip-version-check -r tests/requirements.txt
+      - name: Verify release tag points to main history
+        run: |
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "Release tag must point to a commit reachable from main." >&2; exit 1; }
+      - name: Check core gates before releasing
+        run: |
+          bash tests/run-all.sh core
+          bash tests/run-all.sh parity
+          bash tests/run-all.sh context
+          bash tests/run-all.sh static
       - name: Build archives
         run: bash tools/build-release.sh "${GITHUB_REF_NAME}"
       - name: Create the release

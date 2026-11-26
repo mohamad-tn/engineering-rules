@@ -61,7 +61,7 @@ done
 [[ -d "$target" ]] || { echo "not a directory: ${target}" >&2; exit 2; }
 [[ -f "${skill}/scripts/profiles/${profile}.env" ]] || { echo "unknown profile: ${profile} (lite, standard, strict)" >&2; exit 2; }
 [[ "$layout" == "single" || "$layout" == "member" ]] || { echo "--layout must be single or member" >&2; exit 2; }
-target="$(cd "$target" && pwd)"
+target="$(cd "$target" && pwd -P)"
 
 created=() skipped=() installed_files=()
 version="$(cat "${skill}/VERSION" 2>/dev/null || echo unknown)"
@@ -69,6 +69,19 @@ manifest_rel=".github/engineering-rules.manifest"
 
 sha_of() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
+
+# Do not follow repository-controlled symlinks while copying or updating. Check
+# each component before mkdir/cp (including dangling links, for which -e is false).
+ensure_safe_target_path() {
+  local rel="$1" part cursor="$target"
+  [[ "$rel" != /* ]] || { echo "refusing absolute destination path: ${rel}" >&2; return 2; }
+  IFS='/' read -ra components <<<"$rel"
+  for part in "${components[@]}"; do
+    [[ -n "$part" && "$part" != . && "$part" != .. ]] || { echo "refusing unsafe destination path: ${rel}" >&2; return 2; }
+    cursor="${cursor}/${part}"
+    [[ ! -L "$cursor" ]] || { echo "refusing symlink in destination path: ${cursor}" >&2; return 2; }
+  done
 }
 
 # managed_pairs: "<source>\t<destination relative to the target>" for every file the
@@ -110,8 +123,15 @@ managed_pairs() {
 
 # --update: refresh managed files without clobbering your edits.
 if [[ "$update" == "1" ]]; then
+  ensure_safe_target_path "$manifest_rel"
   mpath="${target}/${manifest_rel}"
   [[ -f "$mpath" ]] || { echo "no ${manifest_rel} in ${target}: install first (or this repository was set up by an older version)" >&2; exit 2; }
+  # Preflight all managed paths before refreshing any file, so a later symlink
+  # cannot cause a partial update or redirect a write outside the target.
+  while IFS=$'\t' read -r src rel; do
+    ensure_safe_target_path "$rel"
+    ensure_safe_target_path "${rel}.new"
+  done < <(managed_pairs)
   updated=0 conflicts=0 added=0 same=0
   newm="$(mktemp)"
   printf '# engineering-rules %s\n' "$version" >"$newm"
@@ -152,6 +172,7 @@ fi
 # put <source> <dest relative to target> [mode]
 put() {
   local src="$1" rel="$2" dest="${target}/$2"
+  ensure_safe_target_path "$rel"
   if [[ -e "$dest" && "$force" -ne 1 ]]; then
     skipped+=("$rel")
     return 0
@@ -169,9 +190,11 @@ put() {
 
 # put_dir <source dir> <dest dir relative to target>
 put_dir() {
-  local src="$1" rel="$2" f
+  local src="$1" rel="$2" f dest_rel
   while IFS= read -r f; do
-    put "$f" "${rel}/${f#"$src"/}"
+    dest_rel="${f#"$src"/}"
+    [[ "$rel" == "." ]] || dest_rel="${rel}/${dest_rel}"
+    put "$f" "$dest_rel"
   done < <(find "$src" -type f | sort)
 }
 
@@ -214,7 +237,9 @@ put_dir "${skill}/scripts/stacks" ".github/scripts/stacks"
 for f in "${skill}"/scripts/policy/*.json; do put "$f" ".github/policy/$(basename "$f")"; done
 
 # --- profile + pins -----------------------------------------------------------------
-profile_dest="${target}/.github/engineering-rules.env"
+profile_rel=".github/engineering-rules.env"
+ensure_safe_target_path "$profile_rel"
+profile_dest="${target}/${profile_rel}"
 if [[ -e "$profile_dest" && "$force" -ne 1 ]]; then
   skipped+=(".github/engineering-rules.env")
 elif ((dry)); then
@@ -255,6 +280,7 @@ put "${skill}/templates/docs-map.yml" "docs/docs-map.yml"
 put "${skill}/templates/required-docs.json" ".github/docs-check/required-docs.json"
 put "${skill}/templates/markdownlint.jsonc" ".github/docs-check/.markdownlint.jsonc"
 put_dir "${skill}/templates/docs" "docs"
+ensure_safe_target_path "README.md"
 if [[ ! -e "${target}/README.md" ]] && ((! dry)); then
   printf '# %s\n\nSee [docs](docs/README.md).\n' "${project:-Project name}" >"${target}/README.md"
   created+=("README.md")
@@ -294,6 +320,7 @@ fi
 
 # --- manifest: remember what we installed so --update can tell your edits from ours ---
 if ((! dry)); then
+  ensure_safe_target_path "$manifest_rel"
   mpath="${target}/${manifest_rel}"
   {
     printf '# engineering-rules %s\n' "$version"

@@ -8,6 +8,9 @@ run_docker() {
   ((${#files[@]})) || { skip lint "no Dockerfile in this directory"; return 0; }
   echo "  dockerfiles: ${files[*]}"
 
+  na deps "Dockerfile lint has no dependency installation step"
+  na test "no built-in image tests; set STACK_CMD_TEST to run image tests"
+
   if have hadolint; then
     gate lint -- hadolint "${files[@]}"
   else

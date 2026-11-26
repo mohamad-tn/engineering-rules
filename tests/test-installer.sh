@@ -66,6 +66,17 @@ fl="$(new_repo flutter/good)"
 bash "$INSTALL" --target "$fl" >/dev/null 2>&1
 grep -q "STACK_REQUIRE=deps,test" "$fl/.github/engineering-rules.env" && ok "flutter gets its own required-gate default" || bad "flutter defaults"
 
+# A symlinked parent must never redirect writes outside the chosen target.
+unsafe="$(new_repo '')"; outside="$(mktemp -d)"
+mkdir -p "$unsafe/.github"; ln -s "$outside" "$unsafe/.github/scripts"
+out="$(bash "$INSTALL" --target "$unsafe" --stack none 2>&1)"; rc=$?
+if [[ "$rc" != 0 ]] && grep -q "refusing symlink in destination path" <<<"$out" && [[ -z "$(find "$outside" -mindepth 1 -print -quit)" ]]; then
+  ok "installer refuses symlinked destination parents without writing outside target"
+else
+  bad "installer followed symlink (rc=$rc)"; printf '%s\n' "$out" >&2
+fi
+rm -rf "$unsafe" "$outside"
+
 echo "== update (managed files refresh, your edits survive)"
 upd="$(new_repo go/good)"
 bash "$INSTALL" --target "$upd" --stack go --org acme --project shop --owner jane >/dev/null 2>&1
@@ -84,10 +95,42 @@ grep -q "conflicts 1" <<<"$out" && ok "update reports a summary" || bad "update 
 bash "$INSTALL" --target "$dry" --update >/dev/null 2>&1; [[ $? -eq 2 ]] && ok "update without a manifest is refused with a clear message" || bad "update without manifest"
 rm -rf "$newskill"
 
+upd_unsafe="$(new_repo go/good)"; update_outside="$(mktemp -d)"
+bash "$INSTALL" --target "$upd_unsafe" --stack go >/dev/null 2>&1
+rm -rf "$upd_unsafe/.github/scripts"; ln -s "$update_outside" "$upd_unsafe/.github/scripts"
+out="$(bash "$INSTALL" --target "$upd_unsafe" --update 2>&1)"; rc=$?
+if [[ "$rc" != 0 ]] && grep -q "refusing symlink in destination path" <<<"$out" && [[ -z "$(find "$update_outside" -mindepth 1 -print -quit)" ]]; then
+  ok "installer update refuses symlinked managed paths"
+else
+  bad "installer update followed symlink (rc=$rc)"; printf '%s\n' "$out" >&2
+fi
+rm -rf "$upd_unsafe" "$update_outside"
+
+# ci-local: parse canonical SSH remote slugs and refuse uncommitted source/workflows before act.
+ci_repo="$(new_repo '')"
+git -C "$ci_repo" remote add origin ssh://git@github.com/acme/shop.git
+git -C "$ci_repo" update-ref refs/remotes/origin/main HEAD
+git -C "$ci_repo" checkout -q -b feature/ci-local
+slug_json="$(bash "${SKILL}/scripts/ci-local.sh" event "$ci_repo")"
+[[ "$(jq -r .repository.full_name <<<"$slug_json")" == "acme/shop" ]] && ok "ci-local parses ssh:// remotes into owner/repository" || bad "ci-local SSH slug"
+echo "untracked" >"$ci_repo/untracked-source.txt"
+out="$(bash "${SKILL}/scripts/ci-local.sh" run "$ci_repo" 2>&1)"; rc=$?
+[[ "$rc" != 0 ]] && grep -q "tracked or untracked changes" <<<"$out" && ok "ci-local refuses untracked source before workflow execution" || bad "ci-local missed untracked files"
+rm "$ci_repo/untracked-source.txt"
+printf '\n.github/workflows/hidden.yml\n' >>"$ci_repo/.gitignore"
+git -C "$ci_repo" add .gitignore && git -C "$ci_repo" -c user.email=t@example.com -c user.name=T commit -q -m "chore: ignore generated workflow"
+mkdir -p "$ci_repo/.github/workflows"; echo 'name: hidden' >"$ci_repo/.github/workflows/hidden.yml"
+out="$(bash "${SKILL}/scripts/ci-local.sh" run "$ci_repo" 2>&1)"; rc=$?
+[[ "$rc" != 0 ]] && grep -q "ignored workflow file" <<<"$out" && ok "ci-local refuses ignored workflow injection" || bad "ci-local missed ignored workflows"
+rm -rf "$ci_repo"
+
 echo "== doctor"
 out="$(cd "$repo" && bash .github/scripts/doctor.sh 2>&1)"; rc=$?
 [[ "$rc" == 0 ]] && ok "doctor passes on a fresh install" || { bad "doctor rc=$rc"; echo "$out" >&2; }
 grep -q "stacks detected: go" <<<"$out" && ok "doctor reports the detected stack" || bad "doctor stack report"
+doctor_rel="${SKILL#"${REPO_ROOT}"/}/scripts/doctor.sh"
+out="$(cd "$REPO_ROOT" && bash "$doctor_rel" "$repo" 2>&1)"; rc=$?
+[[ "$rc" == 0 ]] && grep -q "doctor: ok" <<<"$out" && ok "doctor works from a relative source path with an external target" || { bad "doctor relative source path rc=$rc"; echo "$out" >&2; }
 rm "$repo/.gitleaks.toml"
 out="$(cd "$repo" && bash .github/scripts/doctor.sh 2>&1)"; rc=$?
 [[ "$rc" == 1 ]] && grep -q "missing: .gitleaks.toml" <<<"$out" && ok "doctor fails when a required file is missing" || bad "doctor missing file rc=$rc"
@@ -95,6 +138,11 @@ fresh="$(new_repo '')"
 bash "$INSTALL" --target "$fresh" --stack none >/dev/null 2>&1
 out="$(cd "$fresh" && bash .github/scripts/doctor.sh 2>&1)"
 grep -q "placeholders still present" <<<"$out" && ok "doctor warns about unfilled placeholders" || bad "placeholder warning"
+marker="$fresh/doctor-config-command-ran"
+# shellcheck disable=SC2016  # Deliberately write literal shell syntax as config data.
+printf '\nWARN_LINES=$(touch %s)\n' "$marker" >>"$fresh/.github/engineering-rules.env"
+(cd "$fresh" && bash .github/scripts/doctor.sh >/dev/null 2>&1) || true
+[[ ! -e "$marker" ]] && ok "doctor parses env data without executing shell expressions" || bad "doctor executed repository config"
 
 e2e_edition() { # <install script> <label>
   local script="$1" label="$2" e2e out rc

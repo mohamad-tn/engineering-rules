@@ -4,6 +4,21 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Hardened local diagnostics and installers against repository-controlled shell execution, symlink writes, and credential exposure.
+- Made local proof report incomplete gates accurately and reject untracked or ignored workflow inputs.
+- Validated Python `-r` / `-c` requirements recursively and required exact version pins; corrected doctor path resolution and platform-specific tool installation.
+- Tightened feature-flag date and URL checks, aligned CI workflow permissions, and improved Pages/site metadata validation.
+- Clarified bilingual technology coverage and adoption guidance; corrected generated Arabic page title markup.
+- Rejected inaccessible stack/doctor roots and invalid project maps; required gates with no result now fail instead of passing silently.
+- Kept Node lockfile conflicts within the nearest project and passed install paths as arguments, including apostrophes and lockless libraries.
+- Preserved Go tidy failures and rejected partial failed .NET audit results; CTest now fails when no tests run, and uv verifies its lock.
+- Rejected untracked inputs in local proof, made SHA-lock selftests portable, corrected ShellCheck failures, and added command-level regression tests.
+- Brought the Arabic secret-rotation runbook up to date with incident response and history-scan limitations.
+
 ## [1.1.1] - 2026-11-26
 
 ### Fixed
