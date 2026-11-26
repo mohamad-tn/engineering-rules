@@ -13,6 +13,12 @@ fi
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(cd "$here/.." && pwd)"
 want="${1:-all}"
+case "$want" in all|static|stacks|installer|demo|core|parity|portability|adoption|context) ;; *)
+  echo "unknown test suite: ${want}" >&2
+  echo "usage: bash tests/run-all.sh [static|stacks|installer|demo|core|parity|portability|adoption|context]" >&2
+  exit 2
+  ;;
+esac
 failed=0
 run() {
   local name="$1"

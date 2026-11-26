@@ -15,8 +15,12 @@ if (( ${ER_BASH_MAJOR:-${BASH_VERSINFO[0]}} < 4 )); then
   exit 2
 fi
 
-repo="$(cd "${1:-.}" && pwd)"
+repo="$(cd "${1:-.}" && pwd -P)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 cd "$repo" || exit 2
+# The loader parses KEY=VALUE data; it does not execute the repository's env files.
+# shellcheck source=load-env.sh
+. "${script_dir}/load-env.sh"
 fails=0 warns=0
 
 pass() { printf '[PASS] %s\n' "$1"; }
@@ -52,10 +56,8 @@ fi
 echo "--- tool pins"
 if [[ -f .github/tool-pins.env ]]; then
   empties="$(
-    set -a
-    # shellcheck disable=SC1091
-    . .github/tool-pins.env
-    set +a
+    unset GITLEAKS_VERSION GITLEAKS_SHA256 LYCHEE_VERSION LYCHEE_SHA256 MARKDOWNLINT_CLI2_VERSION RENOVATE_VERSION
+    er_load_env .github/tool-pins.env
     for v in GITLEAKS_VERSION GITLEAKS_SHA256 LYCHEE_VERSION LYCHEE_SHA256 MARKDOWNLINT_CLI2_VERSION RENOVATE_VERSION; do
       [[ -n "${!v:-}" ]] || echo "$v"
     done
@@ -68,8 +70,7 @@ if [[ -f .github/tool-pins.env ]]; then
 fi
 
 echo "--- history policy"
-# shellcheck disable=SC1091
-if ( set -a; . .github/engineering-rules.env 2>/dev/null; [[ -n "${SECRET_SCAN_FROM:-}" ]] ); then
+if ( unset SECRET_SCAN_FROM; er_load_env .github/engineering-rules.env; [[ -n "${SECRET_SCAN_FROM:-}" ]] ); then
   warn "SECRET_SCAN_FROM is set: the secret scan skips older history. Make sure old secrets were rotated and an ADR records this."
 else
   pass "the secret scan covers the full history"
@@ -77,9 +78,11 @@ fi
 
 echo "--- profile and stacks"
 if [[ -f .github/engineering-rules.env ]]; then
-  # shellcheck disable=SC1091
-  ( set -a; . .github/engineering-rules.env; set +a
-    echo "profile values: WARN_LINES=${WARN_LINES:-?} FAIL_LINES=${FAIL_LINES:-?} STACK_REQUIRE=${STACK_REQUIRE:-?} STACK_STRICT=${STACK_STRICT:-?}" )
+  (
+    unset WARN_LINES FAIL_LINES STACK_REQUIRE STACK_STRICT
+    er_load_env .github/engineering-rules.env
+    echo "profile values: WARN_LINES=${WARN_LINES:-?} FAIL_LINES=${FAIL_LINES:-?} STACK_REQUIRE=${STACK_REQUIRE:-?} STACK_STRICT=${STACK_STRICT:-?}"
+  )
 fi
 if [[ -f .github/scripts/stack-gates.sh ]]; then
   stacks="$(bash .github/scripts/stack-gates.sh --root . --list 2>/dev/null || true)"
@@ -117,7 +120,9 @@ if command -v gh >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; t
   if prot="$(gh api "repos/{owner}/{repo}/branches/${branch}/protection" 2>/dev/null)"; then
     pass "branch protection is on for ${branch}"
     jq -e '.required_pull_request_reviews.require_code_owner_reviews == true' <<<"$prot" >/dev/null 2>&1 && pass "code-owner review required" || warn "require code-owner reviews"
-    jq -e '(.required_status_checks.contexts // []) | length > 0' <<<"$prot" >/dev/null 2>&1 && pass "required status checks set" || warn "require the project-gates check"
+    jq -e '(.required_status_checks.contexts // []) | index("project-gates / gates") != null' <<<"$prot" >/dev/null 2>&1 \
+      && pass "required check: project-gates / gates" \
+      || warn "require the exact project-gates / gates status check (other checks do not prove these gates ran)"
   else
     warn "no branch protection found on ${branch} (or no permission to read it): see references/workflow.md"
   fi

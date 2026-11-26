@@ -7,7 +7,7 @@
 
 | البوابة | ما تشغّله |
 |---|---|
-| `pinned` | مع `pip` فقط: كل متطلب يجب أن يكون مثبّتًا بـ `==` |
+| `pinned` | مع `pip` فقط: يجب تثبيت كل متطلب في `requirements.txt` و`requirements-dev.txt` إن وُجد، وفي ملفات `-r` و`-c` المضمّنة تكراريًا، بـ `==` |
 | `deps` | `uv sync --frozen` أو `poetry install` أو بيئة افتراضية جديدة مع `pip install -r` |
 | `format` و`lint` | `ruff format --check` و`ruff check` عند ضبط Ruff، وإلا `Black` و`flake8` |
 | `types` | `mypy` أو `pyright` عند ضبطهما |
@@ -18,6 +18,8 @@
 ## الإعداد الموصى به
 
 - اقفل اعتماداتك (`uv` أو `Poetry`)، أو ثبّت كل سطر في `requirements.txt`.
+- في نمط `pip` يُثبَّت `requirements-dev.txt` مع المتطلبات الأساسية، وتُفحص الملفات المضمّنة عبر `-r` و`-c` تكراريًا بحثًا عن متطلبات غير مثبّتة.
+- تشترط بوابة `pinned` إصدارًا دقيقًا واحدًا بـ `==` لكل حزمة، وترفض متطلبات `editable` وروابط URL/VCS المباشرة.
 - إعدادات اختيارية: `templates/stacks/python/configs/` (الملفان `ruff.toml` و`mypy.ini`).
 - ثبّت `pip-audit` بإصدار محدد في الـ CI.
 

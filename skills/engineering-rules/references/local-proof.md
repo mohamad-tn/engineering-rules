@@ -27,8 +27,7 @@ Markdown block with the commit, the date and a PASS/FAIL row per gate. Options:
 | `--allow-missing` | do not fail when a tool is missing; the gate is still shown as NOT RUN |
 | `--out <file>` | also write the block to a file |
 
-Exit status is 0 only when every gate passed. **A gate that did not run is not proof.**
-If you must use `--allow-missing`, say so in the pull request.
+Without `--allow-missing`, exit status is non-zero if a gate failed or did not run. `--no-stack` also marks the stack gates as not run. With `--allow-missing`, a missing gate may be allowed to produce exit 0 for scripting, but the proof remains incomplete: JSON reports `ok: false` for `NOT_RUN` or `SKIPPED`. Do not present an incomplete result as a passing proof.
 
 ## Run one gate
 

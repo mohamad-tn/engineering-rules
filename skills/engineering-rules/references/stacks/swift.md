@@ -6,7 +6,7 @@ built with `xcodebuild` in your own job (they need signing and platform SDKs).
 | Gate | Runs |
 |---|---|
 | deps | `swift package resolve`; warns if `Package.resolved` is not committed |
-| format | `swiftformat --lint .` or `swift-format lint --strict` when installed |
+| format | `swiftformat --lint .`, or `swift-format lint --strict --recursive .` if swiftformat is not installed and swift-format is available |
 | lint | `swiftlint lint --strict` when installed |
 | test | `swift test` |
 | build | `swift build` |

@@ -10,13 +10,15 @@ All Node gates apply (see [node.md](node.md)). Extra gate:
 
 ## Why the bundle scan matters
 
-A private API URL, an internal host name or a key that ends up in client JavaScript is public
-the moment you deploy. The scan is a cheap last line of defence after `next build`.
+A private API URL or its host that ends up in client JavaScript is public the moment you deploy.
+This scan checks the configured backend URL/host and `NEXT_PUBLIC_` marker strings; it is not a
+general secret scanner or a complete inventory of every URL. Run it after `next build`.
 
 ## Recommended setup
 
 - The browser talks to its own origin; a server layer (route handlers, server actions) calls the backend.
-- Keep the few hosts the browser may contact in a reviewed allowlist (`templates/stacks/nextjs/configs/public-surface.yml`).
+- `public-surface.yml` is an optional manual review inventory copied only with `--stack-configs`;
+  no current gate reads it. Do not treat it as an enforced allowlist.
 - `NEXT_TELEMETRY_DISABLED=1` is set by the gates so builds do not call out.
 
 ## CI

@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: stack-dotnet-${{ github.event.pull_request.number || github.sha }}
@@ -42,6 +43,9 @@ jobs:
         env:
           RUN: ${{ github.event_name != 'pull_request' || steps.scope.outputs.code == 'true' }}
         run: echo "run=${RUN}" >> "$GITHUB_OUTPUT"
+      - name: Require SDK pin
+        if: steps.gate.outputs.run == 'true'
+        run: test -f global.json || { echo "Create and commit global.json with the SDK version required by this repository." >&2; exit 1; }
       - name: Setup .NET
         if: steps.gate.outputs.run == 'true'
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0

@@ -23,10 +23,13 @@ bash .github/scripts/local-proof.sh        # all gates, prints a Markdown block 
 gates:
   image: ubuntu:24.04
   before_script:
-    - apt-get update && apt-get install -y git curl jq nodejs
+    - apt-get update && apt-get install -y git curl jq nodejs python3
   script:
+    - export BASE_SHA="$CI_MERGE_REQUEST_DIFF_BASE_SHA" HEAD_SHA="$CI_COMMIT_SHA" PR_TITLE="$CI_MERGE_REQUEST_TITLE"
+    - export PR_LABELS_JSON="$(python3 -c 'import json,os; print(json.dumps([x.strip() for x in os.getenv("CI_MERGE_REQUEST_LABELS", "").split(",") if x.strip()]))')"
     - bash .github/scripts/gitleaks-scan.sh .gitleaks.toml
     - bash .github/scripts/docs-check.sh .
+    - if [ -f renovate.json ]; then bash .github/scripts/renovate-config-check.sh .; fi
     - node .github/scripts/policy-gates.mjs .
     - node .github/scripts/feature-flag-expiry.mjs .
     - BASE_SHA="$CI_MERGE_REQUEST_DIFF_BASE_SHA" HEAD_SHA="$CI_COMMIT_SHA" bash .github/scripts/pr-size-check.sh

@@ -25,6 +25,13 @@ if command -v "$tool" >/dev/null 2>&1; then
   exit 0
 fi
 
+platform="$(uname -s)"
+arch="$(uname -m)"
+if [[ "$platform" != "Linux" || "$arch" != "x86_64" ]]; then
+  echo "ensure-tool: pinned downloads support Linux x86_64 only; install ${tool} with your package manager or put it on PATH (${platform}/${arch})." >&2
+  exit 1
+fi
+
 case "$tool" in
   gitleaks)
     version="${GITLEAKS_VERSION:-}"

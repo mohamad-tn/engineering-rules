@@ -26,16 +26,24 @@ if (blocked.length > 0) {
 }
 
 const sourceRoots = (process.env.SOURCE_ROOTS ?? "src/,app/,apps/,packages/,scripts/").split(",").map((s) => s.trim());
-const allowedHosts = (process.env.ALLOW_HTTP_HOSTS ?? "localhost,127.0.0.1,10.0.2.2").split(",").map((s) => s.trim());
+const allowedHosts = new Set((process.env.ALLOW_HTTP_HOSTS ?? "localhost,127.0.0.1,10.0.2.2")
+  .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
 // Built from parts so this file does not match its own patterns.
 const passwordPattern = new RegExp(`\\b(?:store|key)[_-]?${["pass", "word"].join("")}["']?\\s*[:=]\\s*["'][^"'\\s$]{4,}["']`, "i");
 const keyHeader = new RegExp(`BEGIN (?:RSA |OPENSSH |EC )?PRIVATE ${"KEY"}`);
-const httpUrl = /http:\/\/([A-Za-z0-9.-]+)/g;
+const httpUrl = /http:\/\/[^\s"'<>`]+/gi;
 
 for (const file of files) {
   if (!sourceRoots.some((prefix) => file.startsWith(prefix)) || /\.(png|jpe?g|gif|webp|ico|ttf|otf|woff2?)$/.test(file)) continue;
   const body = readFileSync(path.join(root, file), "utf8");
-  const insecure = [...body.matchAll(httpUrl)].some((m) => !allowedHosts.includes(m[1]));
+  const insecure = [...body.matchAll(httpUrl)].some((match) => {
+    try {
+      const host = new URL(match[0]).hostname.toLowerCase().replace(/^\[|\]$/g, "");
+      return !allowedHosts.has(host);
+    } catch {
+      return true;
+    }
+  });
   if (passwordPattern.test(body) || keyHeader.test(body) || insecure) {
     process.stderr.write(`forbidden content in ${file}\n`);
     process.exitCode = 1;

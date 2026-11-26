@@ -8,7 +8,7 @@
 | البوابة | ما تشغّله |
 |---|---|
 | `deps` | `swift package resolve`؛ ويحذّر إن لم يُرفع `Package.resolved` |
-| `format` | `swiftformat --lint .` أو `swift-format lint --strict` عند تثبيتهما |
+| `format` | `swiftformat --lint .`، أو `swift-format lint --strict --recursive .` إذا لم تكن `swiftformat` مثبّتة وكانت `swift-format` متاحة |
 | `lint` | `swiftlint lint --strict` عند تثبيته |
 | `test` | `swift test` |
 | `build` | `swift build` |

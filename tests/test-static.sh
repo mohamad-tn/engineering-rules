@@ -17,6 +17,33 @@ fi
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 cd "$REPO_ROOT" || exit 2
 
+echo "== pinned tool platform guard"
+arch_tmp="$(mktemp -d)"
+cat >"${arch_tmp}/uname" <<'UNAME'
+#!/bin/sh
+case "${1:-}" in
+  -s) echo Linux ;;
+  -m) echo aarch64 ;;
+  *) echo Linux ;;
+esac
+UNAME
+chmod +x "${arch_tmp}/uname"
+arch_out="$(PATH="${arch_tmp}:${PATH}" bash skills/engineering-rules/scripts/ensure-tool.sh __arch_test__ 2>&1)"; arch_rc=$?
+rm -rf "$arch_tmp"
+if [[ "$arch_rc" == 1 ]] && grep -q "pinned downloads support Linux x86_64 only" <<<"$arch_out"; then
+  ok "unsupported architecture is rejected before download"
+else
+  bad "unsupported architecture guard (rc=${arch_rc})"
+fi
+
+echo "== test runner"
+runner_out="$(bash tests/run-all.sh __unknown_suite__ 2>&1)"; runner_rc=$?
+if [[ "$runner_rc" == 2 ]] && grep -q "unknown test suite" <<<"$runner_out" && ! grep -q "ALL TESTS PASSED" <<<"$runner_out"; then
+  ok "unknown test suite is rejected"
+else
+  bad "unknown suite must fail explicitly (rc=${runner_rc})"
+fi
+
 echo "== shell"
 shells=()
 while IFS= read -r _f; do shells+=("$_f"); done < <(find . -name '*.sh' -not -path './tests/fixtures/*' -not -path './tests/stubs/*' -not -path './.git/*' | sort)
@@ -36,17 +63,24 @@ import glob, json, sys
 try:
     import yaml
 except ImportError:
-    yaml = None
+    print("PyYAML is required; install tests/requirements.txt")
+    sys.exit(2)
 bad = 0
 for f in glob.glob("**/*.json", recursive=True):
     if "node_modules" in f or "fixtures" in f: continue
     try: json.load(open(f))
     except Exception as e: print("JSON", f, e); bad += 1
-if yaml:
-    for f in glob.glob("**/*.yml", recursive=True) + glob.glob(".github/**/*.yml", recursive=True):
-        if "node_modules" in f or "fixtures" in f: continue
-        try: yaml.safe_load(open(f))
-        except Exception as e: print("YAML", f, e); bad += 1
+for f in glob.glob("**/*.yml", recursive=True) + glob.glob("**/*.yaml", recursive=True):
+    if "node_modules" in f or "fixtures" in f: continue
+    try: yaml.safe_load(open(f, encoding="utf-8"))
+    except Exception as e: print("YAML", f, e); bad += 1
+for f in glob.glob("skills/engineering-rules/templates/stacks/*/ci.yml") + glob.glob("skills/engineering-rules-ar/templates/stacks/*/ci.yml"):
+    text = open(f, encoding="utf-8").read()
+    if "dorny/paths-filter@" in text:
+        data = yaml.safe_load(text) or {}
+        if (data.get("permissions") or {}).get("pull-requests") != "read":
+            print("YAML permissions", f, "must grant pull-requests: read for paths-filter")
+            bad += 1
 sys.exit(1 if bad else 0)
 PY
 
@@ -67,8 +101,18 @@ if command -v npx >/dev/null && [[ -f skills/engineering-rules/templates/markdow
 else skipped "markdownlint (npx not available)"; fi
 LY="$(command -v lychee || find "${HOME}/.cache/engineering-rules-skill/tools" -name lychee -type f 2>/dev/null | head -n 1 || true)"
 if [[ -n "$LY" ]]; then
-  if "$LY" --offline --include-fragments --no-progress --format compact --exclude-path node_modules --exclude-path tests/fixtures "**/*.md" >/tmp/lychee.out 2>&1; then ok "internal links and anchors"; else bad "links"; tail -n 25 /tmp/lychee.out >&2; fi
+  if "$LY" --version >/tmp/lychee-version.out 2>&1; then
+    if "$LY" --offline --include-fragments --no-progress --format compact --exclude-path node_modules --exclude-path tests/fixtures "**/*.md" >/tmp/lychee.out 2>&1; then ok "internal links and anchors"; else bad "links"; tail -n 25 /tmp/lychee.out >&2; fi
+  elif grep -qE 'Exec format error|cannot execute binary file' /tmp/lychee-version.out; then
+    skipped "lychee (cached binary is incompatible with $(uname -m))"
+  else
+    bad "lychee executable is present but cannot report its version"; cat /tmp/lychee-version.out >&2
+  fi
 else skipped "lychee (not installed)"; fi
+
+echo "== ci-local safety"
+if grep -qE 'gh auth token|--secret GITHUB_TOKEN' skills/engineering-rules/scripts/ci-local.sh; then bad "ci-local passes the host GitHub token to workflow code"; else ok "ci-local does not fetch or pass a host GitHub token"; fi
+grep -Fq -- '--secret-file /dev/null' skills/engineering-rules/scripts/ci-local.sh && ok "ci-local disables act's default secrets file" || bad "ci-local default secret file is not disabled"
 
 echo "== hygiene"
 # Secret-looking strings and private hosts must never appear in the repository.
@@ -118,6 +162,12 @@ else
 fi
 # Generated files must be current; marketplace manifests and eval data must parse.
 python3 tools/build-site.py --check >/tmp/site-check.out 2>&1 && ok "site/ is current" || { bad "site/ is out of date"; cat /tmp/site-check.out >&2; }
+python3 - <<'PY' && ok "Arabic document title contains plain text, not bdi markup" || bad "Arabic title contains invalid bdi markup"
+import re
+text = open("site/ar/index.html", encoding="utf-8").read()
+title = re.search(r"<title>(.*?)</title>", text, re.S)
+assert title and "<bdi" not in title.group(1)
+PY
 bash tools/build-llms.sh --check >/tmp/llms-check.out 2>&1 && ok "llms-full.txt is current" || { bad "llms-full.txt out of date"; cat /tmp/llms-check.out >&2; }
 python3 - <<'PY' && ok "plugin manifests, eval data and CITATION parse" || bad "manifest/eval parse"
 import json, yaml

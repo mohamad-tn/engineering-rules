@@ -40,7 +40,10 @@ const validate = (file, data) => {
       seen.add(flag.id);
     }
     if (typeof flag.expiresOn === "string" && /^\d{4}-\d{2}-\d{2}$/.test(flag.expiresOn)) {
-      if (flag.expiresOn < today) {
+      const parsed = new Date(`${flag.expiresOn}T00:00:00.000Z`);
+      if (Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== flag.expiresOn) {
+        findings.push({ file, line, message: `flags[${index}].expiresOn is not a real calendar date` });
+      } else if (flag.expiresOn < today) {
         findings.push({ file, line, message: `flag ${flag.id} expired on ${flag.expiresOn}: remove it or extend it with a recorded reason` });
       }
     } else if (typeof flag.expiresOn === "string") {

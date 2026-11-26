@@ -5,7 +5,7 @@ manager from the lockfile (npm, pnpm, yarn classic or berry, bun).
 
 | Gate | Runs |
 |---|---|
-| deps | `npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable` / `bun install --frozen-lockfile`. No lockfile is a FAIL. |
+| deps | `npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable` / `bun install --frozen-lockfile`. Applications without a lockfile fail; public libraries without one warn and install without creating a lockfile. |
 | format | script `format:check`, else Prettier or Biome if configured |
 | lint | script `lint`, else ESLint or Biome if configured |
 | types | script `typecheck`, else `tsc --noEmit` when `tsconfig.json` exists |
@@ -29,6 +29,6 @@ docs-only pull requests while keeping the required check reporting.
 
 ## Notes
 
-- Workspaces: the root runs everything; member packages are not run twice.
+- Workspaces: the root runs everything; member packages are not run twice. Keep exactly one package-manager lockfile in the discovered project/workspace. If multiple lockfiles are found while searching up to the Git root, `deps` fails rather than silently selecting a manager.
 - React, Vue, Angular, Svelte and Vite have no special gates beyond `build`. Set
   `CLIENT_BUNDLE_DIR` and `API_BASE_URL` to also scan the built bundle for a private backend host.

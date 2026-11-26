@@ -14,19 +14,22 @@
 
 # engineering-rules
 
-**Guardrails for fast code, and for code written by AI.** One command adds a small set of
-engineering rules and real, automated checks (*gates*) to any repository. Every pull request
-carries proof that the checks passed, on GitHub Actions or on your own laptop. It works with
-Claude Code, Cursor, Codex, Copilot, Gemini and with plain human teams.
+**Practical engineering guardrails for AI-assisted and human-written code.** Add a compact
+`AGENTS.md`, reusable checks and stack-specific workflows to an existing Git repository. Run the
+checks locally or wire the same scripts into CI; a proof block is available for committed changes.
+The repository includes integration files for Claude Code, Cursor, Codex, GitHub Copilot, Gemini
+and Windsurf. Exact coverage depends on the selected profile, stack, repository configuration and
+which tools are installed.
 
 ```bash
 bash skills/engineering-rules/scripts/install.sh --target ./my-project
 ```
 
-It detects your stack (Node, Next.js, React, React Native, Vue, Angular, .NET, Laravel, Flutter,
-Python, Java, Go, Rust, Ruby, Swift, C/C++, Terraform, Docker), sets up the checks, and never overwrites a file you already have.
-The core gates — secrets, docs, pull-request size, policy — run in every git repository, including
-one whose language has no stack engine yet. A missing engine is never reported as a green stack run.
+It detects supported stacks (Node.js, Next.js, React, React Native, Vue, Angular, .NET, Laravel,
+Flutter, Python, Java, Go, Rust, Ruby, Swift, C/C++, Terraform and Docker) and installs a starter
+set of checks without overwriting existing files by default. Core checks are stack-independent;
+stack-specific gates differ by engine and project configuration. An unsupported stack is not
+reported as a successful stack run.
 
 ---
 
@@ -48,17 +51,21 @@ failures slip through:
 | CI minutes ran out, or CI is down | Work stops, or people merge without checks |
 | An AI assistant "finishes" the task and says it works | Nothing proves it |
 
-`engineering-rules` turns each of these into a check that fails loudly, and a habit that is
-cheap to follow.
+`engineering-rules` turns several recurring delivery risks into automated checks and documented
+review practices. It is a configurable baseline, not a substitute for code review, incident
+response, application-specific security testing or protected-branch policy.
 
 ## What it is
 
 - **A short rules file** (`AGENTS.md`) that humans and AI assistants follow the same way.
 - **Gates**: scripts that fail a pull request for the problems above. They are plain shell
   and Node, so they run in any CI and on your machine.
-- **Stack gates** for Node, React, Vue, Angular, Next.js, React Native, .NET, Laravel, Flutter, Python, Java, Go, Rust, Ruby, Swift, C/C++, Terraform and Docker: lockfile, install, format, lint, types, tests, build, audit. If your language is not in this list, the core gates still run.
-- **Proof**: `local-proof.sh` runs everything and prints a block you paste into the pull
-  request. No paid CI required.
+- **Stack adapters** for Node, React, Vue, Angular, Next.js, React Native, .NET, Laravel, Flutter,
+  Python, Java, Go, Rust, Ruby, Swift, C/C++, Terraform and Docker. Available gates vary by stack,
+  project scripts, installed tools and profile; `SKIP`, `NOT RUN` and `N/A` are distinct outcomes.
+- **Local results**: `local-proof.sh` runs the configured checks and prints a block for a committed
+  change. It reports when a gate did not run; `--allow-missing` or `--no-stack` is not a passing proof.
+  Hosted CI and branch protection remain optional choices for the adopting team.
 - **An Agent Skill** (`SKILL.md`) so an AI assistant knows how to adopt and follow all of this.
 
 ```mermaid
@@ -183,12 +190,13 @@ advisories of its deliberately old Next.js version.
 
 ```bash
 git clone https://github.com/mohamad-tn/engineering-rules.git
+# Run this from a parent directory where ./my-project is an existing Git checkout.
 bash engineering-rules/skills/engineering-rules/scripts/install.sh --target ./my-project \
      --profile standard --org my-org --project my-project --owner my-handle
 cd my-project
 bash .github/scripts/doctor.sh        # checks the setup, tells you what is left
 git add -A && git commit -m "chore: adopt engineering rules"
-bash .github/scripts/local-proof.sh   # runs every gate; paste the output in your first pull request
+bash .github/scripts/local-proof.sh   # runs configured gates; disclose any NOT RUN or SKIPPED result
 ```
 
 Options: `--profile lite|standard|strict`, `--stack auto|none|node,go,...`,
@@ -259,7 +267,7 @@ run when a matching engine exists. It has been shaped to fit:
 | SaaS and web apps | all gates; Next.js, React, Laravel, Django, Rails, .NET |
 | Mobile apps | React Native, Expo, Flutter; keystore and cleartext checks |
 | APIs and backends | .NET, Node, Go, Java, Python, Rust, PHP |
-| Libraries and packages | `strict` profile; lockfile and audit gates |
+| Libraries and packages | choose the profile deliberately; a published Node library without a lockfile warns rather than failing like an application |
 | Internal tools, scripts, CLIs | `lite` profile |
 | Content sites and marketing pages | docs-check, secret scan, size gate |
 | Monorepos | every project found runs, each with its own stack |

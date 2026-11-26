@@ -11,7 +11,9 @@
 # run      Runs the pull_request workflows for the committed HEAD of a clean
 #          worktree and stores evidence in $CI_EVIDENCE_DIR/<repo>/<sha>-<time>/.
 #   --pr   Level 2 (forge API reachable): the event is the real PR payload
-#          (needs `gh`); HEAD must be the PR head.
+#          (needs `gh`); HEAD must be the PR head. No host token is passed to act.
+# Security: workflows execute arbitrary code on this host. Use only for trusted
+# repositories, preferably in a disposable/isolated environment.
 #   --post Posts one `ci-local/<workflow>/<job>` commit status per job (needs --pr).
 #          Without --pr the event is built offline from origin/<default>...HEAD
 #          (level 3, forge unreachable): evidence only. Steps that call the
@@ -50,12 +52,16 @@ die() {
 
 # repo_slug <dir>: prints "<owner>/<name>" from the origin URL.
 repo_slug() {
-  local url
+  local url path
   url="$(git -C "$1" remote get-url origin 2>/dev/null)" || die "$1 has no origin remote"
-  url="${url%.git}"
-  url="$(printf '%s' "$url" | sed -E 's#^(git@[^:]+:|https?://[^/]+/|ssh://[^/]+/)##')"
-  [[ "$url" == */* ]] || die "cannot read owner/name from origin: $url"
-  printf '%s\n' "$url"
+  case "$url" in
+    *://*) path="${url#*://}"; path="${path#*@}"; path="${path#*/}" ;;
+    *:*)   path="${url#*:}" ;;
+    *) die "cannot read owner/name from origin URL" ;;
+  esac
+  path="${path%.git}"
+  [[ "$path" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "origin URL must identify exactly owner/repository"
+  printf '%s\n' "$path"
 }
 
 check_allowed() {
@@ -68,8 +74,11 @@ check_allowed() {
 }
 
 require_clean() {
-  [[ -z "$(git -C "$1" status --porcelain --untracked-files=no)" ]] ||
-    die "uncommitted changes in $1: commit them first, results belong to a commit"
+  [[ -z "$(git -C "$1" status --porcelain --untracked-files=all)" ]] ||
+    die "tracked or untracked changes in $1: commit or remove them first, results belong to a commit"
+  local ignored_workflow
+  ignored_workflow="$(git -C "$1" ls-files --others --ignored --exclude-standard -- .github/workflows | head -n 1)"
+  [[ -z "$ignored_workflow" ]] || die "ignored workflow file could alter the run: ${ignored_workflow} (remove it before replay)"
 }
 
 # event_json <dir> <slug> <pr number or empty> <labels...>
@@ -143,6 +152,7 @@ run() {
   act="$(find_act)"
 
   local args=(pull_request --eventpath "${out}/event.json" --workflows .github/workflows
+    --secret-file /dev/null
     --var "CI_RUNNER=${RUNNER_LABELS}"
     -P self-hosted=-self-hosted -P ubuntu-latest=-self-hosted -P ubuntu-24.04=-self-hosted -P ubuntu-22.04=-self-hosted
     --env LANG=C.UTF-8
@@ -151,11 +161,6 @@ run() {
     --env "GIT_CONFIG_GLOBAL=${CACHE_DIR}/gitconfig")
   local pair
   for pair in ${CI_LOCAL_EXTRA_ENV:-}; do args+=(--env "$pair"); done
-  if [[ -n "$pr" ]]; then
-    GITHUB_TOKEN="$(gh auth token)"
-    export GITHUB_TOKEN
-    args+=(--secret GITHUB_TOKEN)
-  fi
   # One job at a time: parallel jobs race on act's shared action clones.
   args+=(--concurrent-jobs 1 --action-offline-mode)
 
@@ -167,7 +172,7 @@ run() {
     echo "started=$(date -u +%FT%TZ)"
   } >"${out}/meta.txt"
   local status=0
-  (cd "$dir" && "$act" "${args[@]}") >"${out}/act.log" 2>&1 || status=$?
+  (cd "$dir" && env -u GITHUB_TOKEN -u GH_TOKEN "$act" "${args[@]}") >"${out}/act.log" 2>&1 || status=$?
   echo "ended=$(date -u +%FT%TZ)" >>"${out}/meta.txt"
   echo "act_exit=${status}" >>"${out}/meta.txt"
   results "${out}/act.log" >"${out}/results.tsv"

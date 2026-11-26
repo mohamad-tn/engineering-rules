@@ -33,7 +33,17 @@ first_script() {
 
 run_node() {
   local pm="" lockdir="" install=() runner=() audit=()
-  lockdir="$(find_up package-lock.json . || find_up pnpm-lock.yaml . || find_up yarn.lock . || find_up bun.lockb . || find_up bun.lock . || find_up npm-shrinkwrap.json . || true)"
+  local lock_candidates=() lock_name lock_parent lock_list
+  for lock_name in package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock; do
+    lock_parent="$(find_up "$lock_name" . || true)"
+    [[ -n "$lock_parent" ]] && lock_candidates+=("${lock_parent}/${lock_name}")
+  done
+  if ((${#lock_candidates[@]} > 1)); then
+    lock_list="$(printf '%s, ' "${lock_candidates[@]}")"
+    fail deps "multiple lockfiles found (${lock_list%, }): keep one package-manager lockfile per project/workspace"
+    return 0
+  fi
+  if ((${#lock_candidates[@]} == 1)); then lockdir="$(dirname "${lock_candidates[0]}")"; fi
   NODE_LOCK_DIR="$lockdir"
   local level="${AUDIT_LEVEL:-high}"
 
