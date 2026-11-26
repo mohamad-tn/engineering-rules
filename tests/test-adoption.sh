@@ -82,6 +82,8 @@ if [[ "$json_rc" == 1 ]] && node -e 'const j=JSON.parse(require("fs").readFileSy
 normal="$(STACK_ONLY=lint,test STACK_CMD_LINT=true STACK_CMD_TEST=false STACK_REQUIRE=test bash "${SKILL}/scripts/stack-gates.sh" --root "$dir" 2>&1)"; normal_rc=$?
 quiet="$(STACK_ONLY=lint,test STACK_CMD_LINT=true STACK_CMD_TEST=false STACK_REQUIRE=test bash "${SKILL}/scripts/stack-gates.sh" --root "$dir" --quiet 2>&1)"; quiet_rc=$?
 if [[ "$normal_rc" == 1 && "$quiet_rc" == 1 ]] && grep -qE "^  lint +PASS" <<<"$normal" && ! grep -qE "^  lint +PASS" <<<"$quiet" && grep -qE "^  test +FAIL" <<<"$quiet"; then ok "--quiet hides a selected passing gate and keeps the failed test"; else bad "--quiet"; fi
-pj="$(cd "$repo" && STACK_SKIP_GATES=audit bash .github/scripts/local-proof.sh --title "feat: add sub" --json 2>/dev/null)"
-if node -e 'const j=JSON.parse(require("fs").readFileSync(0,"utf8")); process.exit(typeof j.ok==="boolean" && j.gates.some(g=>g.gate==="Stack gates") ? 0 : 1)' <<<"$pj"; then ok "local-proof --json is valid JSON"; else bad "local-proof --json"; echo "$pj" | head -n 8 >&2; fi
+pj_log="$(mktemp)"
+pj="$(cd "$repo" && STACK_SKIP_GATES=audit bash .github/scripts/local-proof.sh --title "feat: add sub" --json 2>"$pj_log")"
+if node -e 'const j=JSON.parse(require("fs").readFileSync(0,"utf8")); process.exit(typeof j.ok==="boolean" && j.gates.some(g=>g.gate==="Stack gates") ? 0 : 1)' <<<"$pj"; then ok "local-proof --json is valid JSON"; else bad "local-proof --json"; echo "$pj" | head -n 8 >&2; tail -n 30 "$pj_log" >&2; fi
+rm -f "$pj_log"
 summary
