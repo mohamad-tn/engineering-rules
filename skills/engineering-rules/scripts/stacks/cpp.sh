@@ -27,7 +27,7 @@ run_cpp() {
 
   gate build -- cmake --build "$bdir" --parallel
   if grep -rqsE 'enable_testing|add_test' --include=CMakeLists.txt --include='*.cmake' .; then
-    gate test -- ctest --test-dir "$bdir" --output-on-failure
+    gate test -- ctest --test-dir "$bdir" --output-on-failure --no-tests=error
   else
     skip test "no tests registered with CTest (enable_testing / add_test)"
   fi

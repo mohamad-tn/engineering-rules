@@ -74,7 +74,7 @@ if need python3 "python fixtures"; then
   printf '# ordinary comment\npytest==8.3.4\n' >"$dir/requirements-dev.txt"
   run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
   if [[ "$RC" == 0 ]] && grep -qE 'pinned +PASS' <<<"$OUT"; then ok "python: full-line comments are ignored by pin checker"; else bad "python: valid comment rejected"; fi
-  printf '%s\n' 'pytest \' >"$dir/requirements-dev.txt"
+  printf 'pytest \\\n' >"$dir/requirements-dev.txt"
   run_stack "$dir" STACK_REQUIRE=pinned STACK_SKIP_GATES=deps,format,lint,types,test,build,audit
   if [[ "$RC" == 1 ]] && grep -qE 'pinned +FAIL' <<<"$OUT"; then ok "python: incomplete requirement continuation fails"; else bad "python: incomplete continuation was accepted"; fi
   rm -rf "$dir"
@@ -238,7 +238,11 @@ printf 'export const api = "http://localhost@evil.example/api";\n' >"$dir/src/co
 if (cd "$dir" && SOURCE_ROOTS=src/ node "${SKILL}/scripts/stacks/tools/check-tracked-secrets.mjs") >/tmp/url-scan.out 2>&1; then
   bad "mobile secret scanner accepted http://localhost@evil.example"
 else
-  grep -q "forbidden content" /tmp/url-scan.out && ok "mobile secret scanner checks parsed URL host, not userinfo" || { bad "unexpected URL scanner failure"; cat /tmp/url-scan.out >&2; }
+  if grep -q "forbidden content" /tmp/url-scan.out; then
+    ok "mobile secret scanner checks parsed URL host, not userinfo"
+  else
+    bad "unexpected URL scanner failure"; cat /tmp/url-scan.out >&2
+  fi
 fi
 rm -rf "$dir" /tmp/url-scan.out
 

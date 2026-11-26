@@ -30,6 +30,8 @@ run() {
 }
 run core bash "${repo}/skills/engineering-rules/scripts/selftest.sh"
 run stacks bash "${here}/test-stacks.sh"
+run stacks python3 "${here}/test-quality.py"
+run stacks python3 "${here}/test-proof-quality.py"
 run installer bash "${here}/test-installer.sh"
 run portability bash "${here}/test-portability.sh"
 run adoption bash "${here}/test-adoption.sh"

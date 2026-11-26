@@ -5,7 +5,7 @@ Engine: `scripts/stacks/python.sh`. Managers: uv (`uv.lock`), Poetry (`poetry.lo
 | Gate | Runs |
 |---|---|
 | pinned | pip only: every requirement in `requirements.txt`, `requirements-dev.txt` (when present), and recursively included `-r` / `-c` files must be pinned with `==` |
-| deps | `uv sync --frozen`, `poetry install`, or a fresh virtualenv with `pip install -r` |
+| deps | `uv sync --locked` (rejects a stale lock), `poetry install`, or a fresh virtualenv with `pip install -r` |
 | format / lint | `ruff format --check` and `ruff check` when Ruff is configured, else Black / flake8 |
 | types | mypy or pyright when configured |
 | test | pytest, or `manage.py test` for Django, or `unittest` |

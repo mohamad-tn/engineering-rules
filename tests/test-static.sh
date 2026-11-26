@@ -60,18 +60,32 @@ for f in "${mjs[@]}"; do node --check "$f" || bad "node --check $f"; done
 ok "node --check on ${#mjs[@]} files"
 python3 - <<'PY' && ok "JSON and YAML files parse" || bad "JSON/YAML parse"
 import glob, json, sys
+from pathlib import Path
+import tempfile
 try:
     import yaml
 except ImportError:
     print("PyYAML is required; install tests/requirements.txt")
     sys.exit(2)
 bad = 0
-for f in glob.glob("**/*.json", recursive=True):
-    if "node_modules" in f or "fixtures" in f: continue
-    try: json.load(open(f))
+def config_files(root, suffixes):
+    return sorted(f for f in Path(root).rglob("*") if f.is_file() and f.suffix in suffixes
+                  and not {"node_modules", "fixtures", ".git"}.intersection(f.parts))
+with tempfile.TemporaryDirectory(prefix="er-hidden-config-") as tmp:
+    hidden = Path(tmp) / ".github/workflows/hidden.yaml"
+    hidden.parent.mkdir(parents=True)
+    hidden.write_text("broken: [\n", encoding="utf-8")
+    assert hidden in config_files(tmp, {".yml", ".yaml"}), "hidden YAML was omitted"
+    try:
+        yaml.safe_load(hidden.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        pass
+    else:
+        raise AssertionError("malformed hidden YAML was accepted")
+for f in config_files(".", {".json"}):
+    try: json.load(open(f, encoding="utf-8"))
     except Exception as e: print("JSON", f, e); bad += 1
-for f in glob.glob("**/*.yml", recursive=True) + glob.glob("**/*.yaml", recursive=True):
-    if "node_modules" in f or "fixtures" in f: continue
+for f in config_files(".", {".yml", ".yaml"}):
     try: yaml.safe_load(open(f, encoding="utf-8"))
     except Exception as e: print("YAML", f, e); bad += 1
 for f in glob.glob("skills/engineering-rules/templates/stacks/*/ci.yml") + glob.glob("skills/engineering-rules-ar/templates/stacks/*/ci.yml"):

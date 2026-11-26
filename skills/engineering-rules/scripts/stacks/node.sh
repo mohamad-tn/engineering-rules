@@ -33,10 +33,18 @@ first_script() {
 
 run_node() {
   local pm="" lockdir="" install=() runner=() audit=()
-  local lock_candidates=() lock_name lock_parent lock_list
-  for lock_name in package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock; do
-    lock_parent="$(find_up "$lock_name" . || true)"
-    [[ -n "$lock_parent" ]] && lock_candidates+=("${lock_parent}/${lock_name}")
+  local lock_candidates=() lock_name lock_parent lock_list lock_top
+  lock_parent="$(pwd -P)"
+  lock_top="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
+  # The nearest directory owns the lock. An independent child project must not
+  # conflict with a different package manager used by a parent in the same repo.
+  while :; do
+    for lock_name in package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock; do
+      [[ -f "${lock_parent}/${lock_name}" ]] && lock_candidates+=("${lock_parent}/${lock_name}")
+    done
+    ((${#lock_candidates[@]})) && break
+    [[ "$lock_parent" == "$lock_top" || "$lock_parent" == "/" ]] && break
+    lock_parent="$(dirname "$lock_parent")"
   done
   if ((${#lock_candidates[@]} > 1)); then
     lock_list="$(printf '%s, ' "${lock_candidates[@]}")"
@@ -89,7 +97,9 @@ run_node() {
   elif [[ "${NODE_DEPS_DONE:-}" == *"|${lockdir}|"* ]]; then
     skip deps "installed already for ${lockdir}"
   else
-    gate_net deps -- bash -c "cd '${lockdir}' && ${install[*]}"
+    # Positional arguments keep apostrophes and spaces out of shell source.
+    # shellcheck disable=SC2016
+    gate_net deps -- bash -c 'cd -- "$1" && shift && "$@"' _ "${lockdir:-$PWD}" "${install[@]}"
     NODE_DEPS_DONE="${NODE_DEPS_DONE:-}|${lockdir}|"
   fi
   [[ -n "$pm" ]] || return 0

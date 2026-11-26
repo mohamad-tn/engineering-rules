@@ -17,7 +17,8 @@
 # NOT RUN and makes the script fail, unless --allow-missing is given; a gate
 # that did not run is not proof.
 # Exit status: 0 when no gate failed and no gate is missing, unless --allow-missing
-# explicitly relaxes the exit status. In that case JSON still reports ok=false.
+# explicitly relaxes the exit status. Fast mode may exit 0 for development,
+# but JSON still reports ok=false and proof_complete=false for partial results.
 set -uo pipefail
 
 # This script needs bash 4 or newer. macOS ships bash 3.2: use a newer one if it is installed.
@@ -91,8 +92,8 @@ if [[ -z "$base" ]]; then
 fi
 [[ -n "$base" ]] || { echo "Cannot find a base commit. Pass --base <sha> (is origin/${default_branch} fetched?)." >&2; exit 2; }
 [[ -n "$title" ]] || title="$(git log -1 --format=%s)"
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "Uncommitted changes: results belong to a commit. Commit first." >&2
+if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+  echo "Uncommitted tracked or untracked changes: results belong to a commit. Commit or remove them first." >&2
   exit 2
 fi
 
@@ -176,7 +177,13 @@ elif [[ -f "${here}/stack-gates.sh" ]]; then
   bash "${here}/stack-gates.sh" "${stack_args[@]}" >"$stack_log" 2>&1
   stack_status=$?
   case "$stack_status" in
-    0) results+=("| Stack gates | \`stack-gates.sh\` | PASS |"); jrows+=("Stack gates	PASS	stack-gates.sh") ;;
+    0)
+      if ((fast)); then
+        results+=("| Stack gates | \`stack-gates.sh --fast\` | SKIPPED (build/audit; development only, not full proof) |")
+        jrows+=("Stack gates	SKIPPED	stack-gates.sh --fast")
+      else
+        results+=("| Stack gates | \`stack-gates.sh\` | PASS |"); jrows+=("Stack gates	PASS	stack-gates.sh")
+      fi ;;
     3) results+=("| Stack gates | \`stack-gates.sh\` | N/A (no supported stack found) |"); jrows+=("Stack gates	NA	stack-gates.sh") ;;
     *) results+=("| Stack gates | \`stack-gates.sh\` | **FAIL** (exit ${stack_status}) |"); jrows+=("Stack gates	FAIL	stack-gates.sh"); failed=1 ;;
   esac
@@ -211,12 +218,19 @@ fi
 }
 
 if ((json)); then
+  stack_mode=full
+  if ((no_stack)); then stack_mode=skipped
+  elif ((fast)); then stack_mode=fast; fi
   printf '%s\n' "${jrows[@]}" | node -e '
     const rows = require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean).map((l) => l.split("\t"));
     const gates = rows.map(([gate, status, command]) => ({ gate, status, command }));
-    const ok = gates.every((g) => g.status === "PASS" || g.status === "NA");
-    process.stdout.write(JSON.stringify({ ok, commit: process.argv[1], base: process.argv[2], gates }, null, 2) + "\n");
-  ' "$head_sha" "$base"
+    const stack_mode = process.argv[3];
+    const proof_complete = gates.every((g) => g.status === "PASS" || g.status === "NA");
+    const execution_ok = gates.every((g) => g.status === "PASS" || g.status === "NA" ||
+      (stack_mode === "fast" && g.gate === "Stack gates" && g.status === "SKIPPED"));
+    process.stdout.write(JSON.stringify({ ok: proof_complete, execution_ok, proof_complete,
+      stack_mode, commit: process.argv[1], base: process.argv[2], gates }, null, 2) + "\n");
+  ' "$head_sha" "$base" "$stack_mode"
 fi
 
 if ((failed)); then exit 1; fi

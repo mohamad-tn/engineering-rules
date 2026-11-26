@@ -15,7 +15,7 @@ if (( ${ER_BASH_MAJOR:-${BASH_VERSINFO[0]}} < 4 )); then
   exit 2
 fi
 
-repo="$(cd "${1:-.}" && pwd -P)"
+repo="$(cd "${1:-.}" && pwd -P)" || { echo "doctor: repository directory is not accessible." >&2; exit 2; }
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 cd "$repo" || exit 2
 # The loader parses KEY=VALUE data; it does not execute the repository's env files.
