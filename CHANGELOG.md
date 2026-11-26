@@ -9,6 +9,7 @@ All notable changes to this project are recorded here. The format follows
 ### Fixed
 
 - The portability check for `publish-prep` stays green after placeholders are filled, so CI does not fail on a published repository.
+- PHP `audit` is N/A when the lockfile has no packages, and uses `composer audit --locked` otherwise, matching Composer 2.8+ on GitHub Actions.
 
 ## [1.1.0] - 2026-11-22
 

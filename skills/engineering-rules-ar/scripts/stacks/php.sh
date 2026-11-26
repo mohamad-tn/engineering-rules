@@ -50,5 +50,11 @@ run_php() {
 
   na build "PHP has no build step (assets are built by the node engine)"
 
-  gate_net audit -- composer audit --no-interaction
+  # Audit the lockfile. Composer 2.8+ exits 1 when there are no packages
+  # ("No installed packages found"); that is N/A, not a vulnerability.
+  if [[ -f composer.lock ]] && php -r '$l=json_decode((string)file_get_contents("composer.lock"), true); exit((!empty($l["packages"]) || !empty($l["packages-dev"])) ? 0 : 1);'; then
+    gate_net audit -- composer audit --no-interaction --locked
+  else
+    na audit "no Composer packages in the lockfile"
+  fi
 }
