@@ -44,8 +44,12 @@ git_init "$target"
 out="$(PATH="$shim:$PATH" bash "${SKILL}/scripts/install.sh" --target "$target" --stack none --org acme --project shop --owner jane 2>&1)"; rc=$?
 if [[ "$rc" == 0 ]] && grep -q "@jane" "$target/.github/CODEOWNERS"; then ok "installer works with BSD-style sed (no bare -i)"; else bad "BSD sed shim rc=$rc"; echo "$out" | tail -n 5 >&2; fi
 rm -rf "$target"
+# Use a tiny unpublished tree so this still runs after placeholders are filled.
 prep="$(mktemp -d)"
-tar --exclude=.git -cf - -C "$REPO_ROOT" . | tar -xf - -C "$prep"
+mkdir -p "$prep/tools"
+cp "$REPO_ROOT/tools/publish-prep.sh" "$prep/tools/"
+printf 'MIT License\n\nCopyright (c) __YEAR__ __AUTHOR__\n' >"$prep/LICENSE"
+printf 'https://github.com/__GH_OWNER__/__GH_REPO__\n' >"$prep/README.md"
 if PATH="$shim:$PATH" bash "$prep/tools/publish-prep.sh" --owner octo --author "Octo" >/dev/null 2>&1 && grep -q 'Copyright (c) .* Octo' "$prep/LICENSE"; then ok "publish-prep works with BSD-style sed"; else bad "publish-prep with BSD sed"; fi
 rm -rf "$prep"
 
