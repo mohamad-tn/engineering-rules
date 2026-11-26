@@ -8,7 +8,7 @@
 | البوابة | ما تشغّله |
 |---|---|
 | `pinned` | مع `pip` فقط: يجب تثبيت كل متطلب في `requirements.txt` و`requirements-dev.txt` إن وُجد، وفي ملفات `-r` و`-c` المضمّنة تكراريًا، بـ `==` |
-| `deps` | `uv sync --frozen` أو `poetry install` أو بيئة افتراضية جديدة مع `pip install -r` |
+| `deps` | `uv sync --locked` (يرفض القفل غير المتسق) أو `poetry install` أو بيئة افتراضية جديدة مع `pip install -r` |
 | `format` و`lint` | `ruff format --check` و`ruff check` عند ضبط Ruff، وإلا `Black` و`flake8` |
 | `types` | `mypy` أو `pyright` عند ضبطهما |
 | `test` | `pytest`، أو `manage.py test` في Django، أو `unittest` |

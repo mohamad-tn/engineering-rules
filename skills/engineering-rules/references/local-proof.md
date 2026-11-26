@@ -26,8 +26,11 @@ Markdown block with the commit, the date and a PASS/FAIL row per gate. Options:
 | `--no-stack` | skip the stack gates and say so in the proof |
 | `--allow-missing` | do not fail when a tool is missing; the gate is still shown as NOT RUN |
 | `--out <file>` | also write the block to a file |
+| `--json` | JSON on stdout; Markdown goes to stderr or `--out` |
 
 Without `--allow-missing`, exit status is non-zero if a gate failed or did not run. `--no-stack` also marks the stack gates as not run. With `--allow-missing`, a missing gate may be allowed to produce exit 0 for scripting, but the proof remains incomplete: JSON reports `ok: false` for `NOT_RUN` or `SKIPPED`. Do not present an incomplete result as a passing proof.
+
+`--fast` may exit 0 for the development loop while its stack row is `SKIPPED` (build/audit). JSON separates `execution_ok` from `proof_complete`; `ok` is an alias of `proof_complete`, not command success. `stack_mode` is `full`, `fast`, or `skipped`. A fast run of a detected stack is never full proof; rerun without `--fast` before review. These fields summarize the configured top-level gates, not every possible security or optional stack check.
 
 ## Run one gate
 

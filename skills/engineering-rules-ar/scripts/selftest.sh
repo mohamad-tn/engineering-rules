@@ -126,13 +126,14 @@ expect_status 1 "flag-expiry: impossible calendar date fails" node "${here}/feat
 # --- sha256 lock ----------------------------------------------------------
 echo "data" >"${tmp}/data.json"
 if command -v sha256sum >/dev/null 2>&1; then sha256sum "${tmp}/data.json"; else shasum -a 256 "${tmp}/data.json"; fi >"${tmp}/data.json.sha256"
-cat >"${tmp}/lock.mjs" <<LOCK
-import { assertSha256Lock } from "${here}/assert-sha256-lock.mjs";
-assertSha256Lock("${tmp}/data.json", "${tmp}/data.json.sha256", "update the lock");
+cat >"${tmp}/lock.mjs" <<'LOCK'
+import { pathToFileURL } from "node:url";
+const { assertSha256Lock } = await import(pathToFileURL(process.argv[2]).href);
+assertSha256Lock(process.argv[3], process.argv[4], "update the lock");
 LOCK
-expect_status 0 "sha256-lock: matching digest passes" node "${tmp}/lock.mjs"
+expect_status 0 "sha256-lock: matching digest passes" node "${tmp}/lock.mjs" "${here}/assert-sha256-lock.mjs" "${tmp}/data.json" "${tmp}/data.json.sha256"
 echo "changed" >>"${tmp}/data.json"
-expect_status 1 "sha256-lock: changed file fails" node "${tmp}/lock.mjs"
+expect_status 1 "sha256-lock: changed file fails" node "${tmp}/lock.mjs" "${here}/assert-sha256-lock.mjs" "${tmp}/data.json" "${tmp}/data.json.sha256"
 
 # --- ci-local event (offline payload) -------------------------------------
 git -C "$repo" remote add origin "https://example.com/org/project.git" 2>/dev/null || git -C "$repo" remote add origin "https://example.com/org/project.git"

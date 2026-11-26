@@ -24,7 +24,7 @@ run_python() {
       ;;
     uv)
       have uv || { notrun deps "uv is not installed"; return 0; }
-      gate_net deps -- uv sync --frozen
+      gate_net deps -- uv sync --locked
       venv=".venv"
       ;;
     poetry)
@@ -34,7 +34,7 @@ run_python() {
       ;;
     pip)
       # every requirement must be pinned with ==
-      local unpinned="" pin_rc=0 req_file
+      local unpinned="" pin_rc=0
       local reqs=(-r requirements.txt) req_files=(requirements.txt)
       if [[ -f requirements-dev.txt ]]; then reqs+=(-r requirements-dev.txt); req_files+=(requirements-dev.txt); fi
       unpinned="$(python3 - "${req_files[@]}" <<'PY'

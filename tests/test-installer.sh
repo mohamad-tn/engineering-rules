@@ -128,7 +128,7 @@ echo "== doctor"
 out="$(cd "$repo" && bash .github/scripts/doctor.sh 2>&1)"; rc=$?
 [[ "$rc" == 0 ]] && ok "doctor passes on a fresh install" || { bad "doctor rc=$rc"; echo "$out" >&2; }
 grep -q "stacks detected: go" <<<"$out" && ok "doctor reports the detected stack" || bad "doctor stack report"
-doctor_rel="${SKILL#${REPO_ROOT}/}/scripts/doctor.sh"
+doctor_rel="${SKILL#"${REPO_ROOT}"/}/scripts/doctor.sh"
 out="$(cd "$REPO_ROOT" && bash "$doctor_rel" "$repo" 2>&1)"; rc=$?
 [[ "$rc" == 0 ]] && grep -q "doctor: ok" <<<"$out" && ok "doctor works from a relative source path with an external target" || { bad "doctor relative source path rc=$rc"; echo "$out" >&2; }
 rm "$repo/.gitleaks.toml"
@@ -139,6 +139,7 @@ bash "$INSTALL" --target "$fresh" --stack none >/dev/null 2>&1
 out="$(cd "$fresh" && bash .github/scripts/doctor.sh 2>&1)"
 grep -q "placeholders still present" <<<"$out" && ok "doctor warns about unfilled placeholders" || bad "placeholder warning"
 marker="$fresh/doctor-config-command-ran"
+# shellcheck disable=SC2016  # Deliberately write literal shell syntax as config data.
 printf '\nWARN_LINES=$(touch %s)\n' "$marker" >>"$fresh/.github/engineering-rules.env"
 (cd "$fresh" && bash .github/scripts/doctor.sh >/dev/null 2>&1) || true
 [[ ! -e "$marker" ]] && ok "doctor parses env data without executing shell expressions" || bad "doctor executed repository config"
