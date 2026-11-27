@@ -101,6 +101,8 @@ PY
 echo "== release packaging"
 python3 tests/test-release-package.py || bad "release package build and verification"
 python3 tests/test-release-checks.py || bad "release CI evidence validation"
+echo "== maintenance script safety"
+python3 tests/test-maintenance.py || bad "publish preparation and Arabic synchronization safety"
 
 echo "== github workflows"
 AL="$(command -v actionlint || true)"; [[ -z "$AL" && -x /tmp/actionlint ]] && AL=/tmp/actionlint
