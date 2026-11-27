@@ -16,6 +16,7 @@ fi
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 echo "== arabic edition parity"
+bash "$REPO_ROOT/tools/sync-ar.sh" --check || { echo "  FAIL  non-translated Arabic files are out of sync"; exit 1; }
 python3 - "$REPO_ROOT" <<'PY'
 import pathlib, re, sys
 root = pathlib.Path(sys.argv[1])
