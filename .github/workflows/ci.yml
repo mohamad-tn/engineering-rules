@@ -141,18 +141,6 @@ jobs:
       - run: bash skills/engineering-rules/scripts/stack-gates.sh --root tests/fixtures/flutter/good
         env:
           STACK_REQUIRE: deps,test
-      - name: Export generated fixture lockfile temporarily
-        if: always()
-        run: |
-          lock=tests/fixtures/flutter/good/pubspec.lock
-          if [ -s "$lock" ]; then
-            printf 'FLUTTER_FIXTURE_LOCK_BASE64_BEGIN\n'
-            base64 -w0 "$lock"
-            printf '\nFLUTTER_FIXTURE_LOCK_BASE64_END\n'
-          else
-            echo 'No generated Flutter fixture lockfile found.'
-          fi
-
   java:
     name: java (real Maven, experimental)
     runs-on: ubuntu-24.04
