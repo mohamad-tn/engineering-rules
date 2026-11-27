@@ -98,6 +98,10 @@ for f in glob.glob("skills/engineering-rules/templates/stacks/*/ci.yml") + glob.
 sys.exit(1 if bad else 0)
 PY
 
+echo "== release packaging"
+python3 tests/test-release-package.py || bad "release package build and verification"
+python3 tests/test-release-checks.py || bad "release CI evidence validation"
+
 echo "== github workflows"
 AL="$(command -v actionlint || true)"; [[ -z "$AL" && -x /tmp/actionlint ]] && AL=/tmp/actionlint
 if [[ -n "$AL" ]]; then
