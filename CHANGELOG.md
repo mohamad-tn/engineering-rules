@@ -19,6 +19,7 @@ All notable changes to this project are recorded here. The format follows
 - Classified recognized HTTP 429 and rate-limit responses from network-dependent gates as NOT RUN without rerunning a command override; required gates still fail when they cannot run.
 - Rejected untracked inputs in local proof, made SHA-lock selftests portable, corrected ShellCheck failures, and added command-level regression tests.
 - Brought the Arabic secret-rotation runbook up to date with incident response and history-scan limitations.
+- Disabled Git/Gitleaks color output for history scans and fail closed when a non-empty selected history is reported as zero commits scanned.
 
 ## [1.1.1] - 2026-11-26
 

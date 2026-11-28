@@ -42,11 +42,35 @@ fi
 # Legacy history: an existing repository may contain old secrets that were already
 # rotated. SECRET_SCAN_FROM=<commit> scans only commits after that one (record the
 # decision in an ADR, and rotate the old secrets). The default scans everything.
-log_opts="--all"
+log_opts="--all --no-color"
+expected_commits="$(git rev-list --count --all)"
 if [[ -n "${SECRET_SCAN_FROM:-}" ]]; then
   git cat-file -e "${SECRET_SCAN_FROM}^{commit}" 2>/dev/null || { echo "::error::SECRET_SCAN_FROM is not a commit in this clone: ${SECRET_SCAN_FROM}" >&2; exit 1; }
-  log_opts="${SECRET_SCAN_FROM}..HEAD"
+  log_opts="${SECRET_SCAN_FROM}..HEAD --no-color"
+  expected_commits="$(git rev-list --count "${SECRET_SCAN_FROM}..HEAD")"
   echo "::warning::secret scan covers only commits after ${SECRET_SCAN_FROM} (SECRET_SCAN_FROM). History before it must be rotated and recorded in an ADR." >&2
 fi
 
-"$bin" git . --config "$config" --redact --no-banner --exit-code 1 --log-opts="$log_opts" --verbose
+scan_log="$(mktemp)"
+trap 'rm -f "$scan_log"' EXIT
+if NO_COLOR=1 "$bin" git . --config "$config" --redact --no-banner --exit-code 1 --log-opts="$log_opts" --verbose >"$scan_log" 2>&1; then
+  scan_rc=0
+else
+  scan_rc=$?
+fi
+cat "$scan_log"
+
+# Gitleaks 8.30.1 can exit successfully after Git returns colored patches that
+# its parser does not recognize. Disable Git and Gitleaks colors, then never
+# report a clean scan if the chosen range contains commits but Gitleaks says it
+# scanned zero (or omits its scan count).
+if (( expected_commits > 0 )); then
+  if grep -Eq '(^|[[:space:]])0 commits? scanned([.]|$)' "$scan_log"; then
+    echo "::error::Gitleaks reported 0 commits scanned although the selected Git history contains ${expected_commits} commit(s); refusing to treat the scan as clean." >&2
+    exit 1
+  elif ! grep -Eq '(^|[[:space:]])[1-9][0-9]* commits? scanned([.]|$)' "$scan_log"; then
+    echo "::error::Could not verify that Gitleaks scanned the selected Git history; refusing to treat the scan as clean." >&2
+    exit 1
+  fi
+fi
+exit "$scan_rc"
