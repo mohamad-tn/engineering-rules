@@ -16,6 +16,7 @@ All notable changes to this project are recorded here. The format follows
 - Rejected inaccessible stack/doctor roots and invalid project maps; required gates with no result now fail instead of passing silently.
 - Kept Node lockfile conflicts within the nearest project and passed install paths as arguments, including apostrophes and lockless libraries.
 - Preserved Go tidy failures and rejected partial failed .NET audit results; CTest now fails when no tests run, and uv verifies its lock.
+- Classified recognized HTTP 429 and rate-limit responses from network-dependent gates as NOT RUN without rerunning a command override; required gates still fail when they cannot run.
 - Rejected untracked inputs in local proof, made SHA-lock selftests portable, corrected ShellCheck failures, and added command-level regression tests.
 - Brought the Arabic secret-rotation runbook up to date with incident response and history-scan limitations.
 

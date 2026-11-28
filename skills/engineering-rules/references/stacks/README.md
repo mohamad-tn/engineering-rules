@@ -31,7 +31,7 @@ one repository each get their own run.
 | PASS | ran and succeeded |
 | FAIL | ran and failed (the last lines of the log are printed) |
 | SKIP | nothing to run (no script, no config) |
-| NOT RUN | applies, but a tool or the network is missing |
+| NOT RUN | applies, but a tool or network service is unavailable or rate-limited |
 | N/A | does not apply to this stack (PHP has no build step) |
 | WARN | advice only |
 
@@ -39,6 +39,9 @@ one repository each get their own run.
 PASS. For those, SKIP and NOT RUN count as a failure: "nothing ran" never looks green. A
 project with no tests fails `test` until it has some. Profiles change the list:
 `lite` requires `deps,test`; `strict` adds `format,lint,types,audit`.
+
+For network-dependent gates, recognized HTTP 429 and rate-limit responses are recorded as
+NOT RUN rather than as a command failure. NOT RUN still fails when that gate is required.
 
 ## Configure
 
