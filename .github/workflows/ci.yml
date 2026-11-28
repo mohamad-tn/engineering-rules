@@ -119,6 +119,7 @@ jobs:
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: stable
+          cache: false
       - run: bash tests/run-all.sh installer
       - run: bash tests/run-all.sh adoption
       - run: bash tests/run-all.sh portability
