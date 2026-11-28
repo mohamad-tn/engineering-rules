@@ -75,6 +75,23 @@ else
   bad "full-history scan did not report the expected .env finding (rc=$scan_rc)"; tail -n 10 <<<"$scan_out" >&2
 fi
 
+# A successful-looking scan that reports no commits is not proof of a clean
+# repository when the selected history is non-empty.
+mock_gitleaks="$sec/mock-gitleaks"
+cat >"$mock_gitleaks" <<'MOCK'
+#!/usr/bin/env bash
+echo "0 commits scanned."
+echo "no leaks found"
+exit 0
+MOCK
+chmod +x "$mock_gitleaks"
+mock_out="$(cd "$sec" && bash .github/scripts/gitleaks-scan.sh .gitleaks.toml "$mock_gitleaks" 2>&1)"; mock_rc=$?
+if [[ "$mock_rc" != 0 ]] && grep -q "refusing to treat the scan as clean" <<<"$mock_out"; then
+  ok "a zero-commit success is rejected when the selected history is non-empty"
+else
+  bad "zero-commit scan was not rejected (rc=$mock_rc)"; tail -n 8 <<<"$mock_out" >&2
+fi
+
 echo "== machine-readable output for agents"
 dir="$(fixture_copy node/bad)"
 json="$(STACK_ONLY=lint,test STACK_CMD_LINT=true STACK_CMD_TEST=false STACK_REQUIRE=test bash "${SKILL}/scripts/stack-gates.sh" --root "$dir" --json 2>/dev/null)"; json_rc=$?
