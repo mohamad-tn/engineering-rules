@@ -197,6 +197,18 @@ stub_case "swift: resolve, test, build" swift/good pass "swift: " "swift package
 stub_case "swift: failing swift test fails the run" swift/good fail "test +FAIL" -- STUB_EXIT_SWIFT=1
 stub_case "maven: wrapper, spotless, verify, package" java-maven/good pass "framework: spring-boot" \
   "mvnw .*dependency:resolve" "mvnw .*spotless:check" "mvnw .*verify" "mvnw .*package" --
+dir="$(fixture_copy java-maven/good)"
+log="$(mktemp)"
+run_stack "$dir" STUB_LOG="$log" STACK_REQUIRE=deps \
+  "STACK_CMD_DEPS=printf '%s\\n' '429-command-called' >> \"\$STUB_LOG\"; printf '%s\\n' 'HTTP 429 Too Many Requests' >&2; exit 22"
+called="$(grep -c '^429-command-called$' "$log" || true)"
+if [[ "$RC" == 1 && "$called" == 1 ]] && grep -qE 'deps +NOT RUN' <<<"$OUT"; then
+  ok "maven: HTTP 429 is NOT RUN, override runs once, and required deps still block"
+else
+  bad "maven: HTTP 429 classification rc=$RC calls=$called"
+  printf '%s\n' "$OUT" | tail -n 15 >&2
+fi
+rm -rf "$dir" "$log"
 stub_case "maven: failing build tool fails the run" java-maven/good fail "test +FAIL" -- STUB_EXIT_MVNW=1
 stub_case "gradle: wrapper check and assemble" java-gradle/good pass "build tool: gradle" "gradlew .*check" "gradlew .*assemble" --
 SKIP_INSTALL=0

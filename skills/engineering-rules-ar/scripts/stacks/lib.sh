@@ -97,8 +97,12 @@ _run() {
   local took=$((SECONDS - started))
   if ((status == 0)); then
     pass "$name" "${took}s"
-  elif [[ "$net" == "1" ]] && grep -qiE 'ENOTFOUND|EAI_AGAIN|ECONNREFUSED|Could not resolve host|Temporary failure in name resolution|Unable to load the service index|network is unreachable|getaddrinfo|dial tcp.*lookup|failed to fetch|could not connect' "$log"; then
-    notrun "$name" "network unavailable"
+  elif [[ "$net" == "1" ]] && grep -qiE 'ENOTFOUND|EAI_AGAIN|ECONNREFUSED|Could not resolve host|Temporary failure in name resolution|Unable to load the service index|network is unreachable|getaddrinfo|dial tcp.*lookup|failed to fetch|could not connect|HTTP([^[:space:]]*)?[[:space:]:-]+429|status[^[:digit:]]*429|too many requests|rate[ -]limit(ed|ing)?' "$log"; then
+    # The command (including a STACK_CMD override) already ran. Record the
+    # result directly instead of routing through notrun(), which may run an
+    # override a second time.
+    _record "$name" NOTRUN "network unavailable or rate-limited"
+    _say "$name" "NOT RUN (network unavailable or rate-limited)"
     sed 's/^/      | /' < <(tail -n 6 "$log")
   elif ((status == 124 && took >= ${STACK_GATE_TIMEOUT:-1800} - 1)); then
     fail "$name" "timed out after ${STACK_GATE_TIMEOUT:-1800}s"
